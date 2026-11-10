@@ -33,39 +33,34 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-  <!-- 全域載入遮罩 (僅在沒有快取或上傳照片時顯示) -->
+  <!-- 全域載入遮罩 -->
   <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/55 backdrop-blur-sm z-50 hidden flex-col items-center justify-center text-white">
     <div class="w-11 h-11 border-4 border-white/30 border-t-white rounded-full animate-spin mb-3"></div>
-    <p id="loadingText" class="text-sm sm:text-base font-bold tracking-wide">處理中，請稍候...</p>
+    <p id="loadingText" class="text-sm sm:text-base font-bold tracking-wide">同步最新資料中...</p>
   </div>
 
   <!-- 頂部訊息通知列 -->
   <div id="toastBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden max-w-md w-[92%] px-4 py-3 rounded-2xl shadow-xl text-sm font-bold text-center transition-all"></div>
 
-  <!-- 頂部導覽列 (全新清爽不擁擠排版) -->
+  <!-- 頂部導覽列 -->
   <header id="appHeader" class="sticky top-0 z-30 glass-header border-b border-slate-200 hidden">
     <div class="max-w-4xl mx-auto px-4 py-2.5">
       <div class="flex items-center justify-between gap-2">
-        <!-- 左側：Logo 與不換行標題 -->
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow-sm shrink-0">
             522
           </div>
           <div class="truncate">
-            <div class="flex items-center gap-1.5">
-              <h1 class="text-base sm:text-lg font-black text-slate-800 whitespace-nowrap leading-tight">522打掃系統</h1>
-              <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 hidden" title="背景同步中"></span>
-            </div>
+            <h1 class="text-base sm:text-lg font-black text-slate-800 whitespace-nowrap leading-tight">522打掃系統</h1>
             <p id="headerUserBadge" class="text-xs text-slate-500 font-bold whitespace-nowrap truncate"></p>
           </div>
         </div>
 
-        <!-- 右側：操作按鈕群 (單行不折字) -->
         <div class="flex items-center gap-1.5 shrink-0">
           <button onclick="openPasswordModal()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold whitespace-nowrap transition">
             改密碼
           </button>
-          <button onclick="refreshSystemData(true)" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold whitespace-nowrap transition">
+          <button onclick="refreshSystemData()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold whitespace-nowrap transition">
             重整
           </button>
           <button onclick="logout()" class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold whitespace-nowrap transition">
@@ -74,7 +69,7 @@
         </div>
       </div>
 
-      <!-- 楊定豊專屬：獨立醒目後台切換條 (不與上方按鈕互擠) -->
+      <!-- 楊定豊專屬：獨立後台切換條 -->
       <div id="adminPortalBar" class="hidden mt-2 pt-2 border-t border-slate-100">
         <button id="adminPortalBtn" onclick="toggleAdminView()" class="w-full py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white text-xs sm:text-sm font-black shadow-sm flex items-center justify-center gap-1.5 transition">
           <span>👑 進入室長管理後台</span>
@@ -83,7 +78,7 @@
     </div>
   </header>
 
-  <!-- 主內容容器 (底部預留 pb-28 防止 iPhone Safari 底部懸浮網址列遮擋按鈕) -->
+  <!-- 主內容容器 -->
   <main class="flex-1 max-w-4xl w-full mx-auto px-4 pt-5 pb-28">
 
     <!-- ==================== 1. 登入畫面 ==================== -->
@@ -101,7 +96,6 @@
             class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-base transition">
         </div>
 
-        <!-- 快速選擇床位 -->
         <div>
           <p class="text-xs font-bold text-slate-500 mb-2">或直接點選床位快速帶入：</p>
           <div class="grid grid-cols-4 gap-2">
@@ -136,7 +130,6 @@
     <!-- ==================== 2. 室友主畫面 ==================== -->
     <section id="dashboardView" class="hidden space-y-5 fade-in">
       
-      <!-- 頂部狀態橫幅 -->
       <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-5 sm:p-6 shadow-md">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -151,7 +144,6 @@
         </div>
       </div>
 
-      <!-- 掃區卡片容器 -->
       <div id="zoneCardsContainer" class="grid grid-cols-1 gap-5"></div>
     </section>
 
@@ -322,7 +314,9 @@
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbz7lHJcXe3iAaycDpz3zwFFYWdaIaEuSjjkXAENkiEqmxRQmfWtaGj8-NNbI7DGf-kU/exec";
-    const CACHE_KEY = "dorm522_sys_cache_v2";
+
+    // 徹底清除上一版造成的錯誤快取，確保 100% 絕對以雲端試算表為準
+    localStorage.removeItem("dorm522_sys_cache_v2");
 
     const BED_MAP = {
       "1": "賴千睿",
@@ -334,7 +328,6 @@
     let state = {
       currentUser: JSON.parse(localStorage.getItem("dorm522_user") || "null"),
       inAdminView: false,
-      hasLoadedFreshData: false,
       users: [],
       zones: [],
       checkpoints: [],
@@ -345,53 +338,44 @@
       draftPhotos: {}
     };
 
-    // 啟動即刻讀取本地快取（0秒瞬開），並在背景同步最新雲端狀態
     window.addEventListener("DOMContentLoaded", () => {
-      initAppFast();
+      initApp();
     });
 
-    async function initAppFast() {
-      const cachedRaw = localStorage.getItem(CACHE_KEY);
-      if (cachedRaw) {
-        try {
-          const cachedData = JSON.parse(cachedRaw);
-          syncStateData(cachedData, false);
-        } catch (e) {}
+    async function initApp() {
+      // 未登入時直接顯示登入框，不發送多餘的初始請求，省去第一次等待
+      if (!state.currentUser) {
+        return;
       }
 
-      // 若已登入且有快取 -> 直接 0 秒進入主畫面，完全不跳轉圈圈遮罩
-      if (state.currentUser && state.zones.length > 0) {
+      // 已登入者打開網頁時，直接向雲端拉取一次最新真實狀態
+      showLoading("正在同步最新資料...");
+      const res = await callApi({ action: "init" });
+      hideLoading();
+
+      if (!res || !res.success) {
+        showToast(res?.message || "無法連線至雲端試算表，請檢查網路", true);
+        return;
+      }
+
+      syncStateData(res.data);
+
+      const matched = state.users.find(u => u.name === state.currentUser.name);
+      if (matched) {
+        state.currentUser = matched;
+        localStorage.setItem("dorm522_user", JSON.stringify(matched));
         enterMainSystem();
-        refreshSystemData(false); // 背景靜默更新
-        return;
+      } else {
+        logout();
       }
-
-      // 若已登入但無快取 -> 顯示一次載入
-      if (state.currentUser) {
-        showLoading("正在同步 522打掃系統...");
-        const res = await callApi({ action: "init" });
-        hideLoading();
-        if (res && res.success) {
-          syncStateData(res.data, true);
-          enterMainSystem();
-        }
-        return;
-      }
-
-      // 若未登入 -> 直接顯示登入畫面（不跳轉圈遮罩卡住使用者），同時在背景預載資料供秒登
-      refreshSystemData(false);
     }
 
-    function syncStateData(data, isFreshFromServer = true) {
+    function syncStateData(data) {
       if (!data) return;
       state.users = data.users || [];
       state.zones = data.zones || [];
       state.checkpoints = data.checkpoints || [];
       state.submissions = data.submissions || [];
-      if (isFreshFromServer) {
-        state.hasLoadedFreshData = true;
-        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-      }
     }
 
     function quickSelectBed(bedNo) {
@@ -414,26 +398,8 @@
         return;
       }
 
-      // 快速通道：若背景預載已完成且後端包含 pin 欄位，直接在本地 0 秒完成驗證登入！
-      if (state.hasLoadedFreshData && state.users.length > 0 && state.users[0].pin !== undefined) {
-        const matched = state.users.find(u => u.bed === inputVal || u.name === inputVal);
-        if (!matched) {
-          showToast("找不到此床號或姓名，請輸入 1～4 號床或室友姓名。", true);
-          return;
-        }
-        if (matched.pin !== pwdVal) {
-          showToast("密碼錯誤！若忘記密碼請請楊定豊於後台重設為 0000。", true);
-          return;
-        }
-        state.currentUser = { bed: matched.bed, name: matched.name, role: matched.role };
-        localStorage.setItem("dorm522_user", JSON.stringify(state.currentUser));
-        enterMainSystem();
-        showToast(`歡迎登入，${matched.bed}號床 ${matched.name}！`);
-        return;
-      }
-
-      // 若背景預載還沒回來，才呼叫後端驗證
-      showLoading("驗證登入中...");
+      // 單次請求同時完成密碼驗證並取回最新試算表資料
+      showLoading("驗證身分並同步最新資料...");
       const res = await callApi({
         action: "login",
         identifier: inputVal,
@@ -448,7 +414,7 @@
 
       state.currentUser = res.user;
       localStorage.setItem("dorm522_user", JSON.stringify(res.user));
-      syncStateData(res.data, true);
+      syncStateData(res.data);
       enterMainSystem();
       showToast(`歡迎登入，${res.user.bed}號床 ${res.user.name}！`);
     }
@@ -482,22 +448,17 @@
       document.getElementById("loginPasswordInput").value = "0000";
     }
 
-    async function refreshSystemData(manual = false) {
-      const dot = document.getElementById("syncDot");
-      if (dot) dot.classList.remove("hidden");
-      if (manual) showLoading("正在同步最新狀態...");
-
+    async function refreshSystemData() {
+      showLoading("正在同步最新狀態...");
       const res = await callApi({ action: "init" });
-
-      if (dot) dot.classList.add("hidden");
-      if (manual) hideLoading();
+      hideLoading();
 
       if (res && res.success) {
-        syncStateData(res.data, true);
-        if (state.currentUser) {
-          renderAllViews();
-        }
-        if (manual) showToast("已更新為最新狀態");
+        syncStateData(res.data);
+        renderAllViews();
+        showToast("已同步最新狀態");
+      } else {
+        showToast("同步失敗，請重試", true);
       }
     }
 
@@ -682,9 +643,10 @@
 
       if (!res.success) {
         showToast(res.message, true);
+        await refreshSystemData();
         return;
       }
-      syncStateData(res.data, true);
+      syncStateData(res.data);
       renderAllViews();
       showToast(res.message);
     }
@@ -729,7 +691,6 @@
         showToast(res.message, true);
         return;
       }
-      if (res.data) syncStateData(res.data, true);
       closePasswordModal();
       showToast(res.message);
     }
@@ -912,7 +873,7 @@
         return;
       }
 
-      syncStateData(res.data, true);
+      syncStateData(res.data);
       closeCameraGuide();
       renderAllViews();
       showToast(res.message);
@@ -1054,7 +1015,7 @@
       const res = await callApi({ action: "releaseZone", zoneId, isAdmin: true });
       hideLoading();
       if (res.success) {
-        syncStateData(res.data, true);
+        syncStateData(res.data);
         renderAllViews();
         showToast(res.message);
       } else {
@@ -1067,7 +1028,6 @@
       showLoading("正在重設密碼...");
       const res = await callApi({ action: "resetUserPassword", targetName });
       hideLoading();
-      if (res.success && res.data) syncStateData(res.data, true);
       showToast(res.message, !res.success);
     }
 
@@ -1077,7 +1037,7 @@
       const res = await callApi({ action: "reviewOnline", zoneId, approved, comment });
       hideLoading();
       if (res.success) {
-        syncStateData(res.data, true);
+        syncStateData(res.data);
         renderAllViews();
         showToast(res.message);
       } else {
@@ -1091,7 +1051,7 @@
       const res = await callApi({ action: "reviewPhysical", zoneId, approved, comment });
       hideLoading();
       if (res.success) {
-        syncStateData(res.data, true);
+        syncStateData(res.data);
         renderAllViews();
         showToast(res.message);
       } else {
@@ -1117,7 +1077,7 @@
         });
         hideLoading();
         if (res.success) {
-          syncStateData(res.data, true);
+          syncStateData(res.data);
           renderAllViews();
           showToast(res.message);
         } else {
@@ -1141,7 +1101,7 @@
       });
       hideLoading();
       if (res.success) {
-        syncStateData(res.data, true);
+        syncStateData(res.data);
         renderAllViews();
         showToast("已更新檢查點文字說明");
       }
@@ -1154,7 +1114,7 @@
       const res = await callApi({ action: "updateDeadline", deadline });
       hideLoading();
       if (res.success) {
-        syncStateData(res.data, true);
+        syncStateData(res.data);
         renderAllViews();
         showToast(res.message);
       }
@@ -1166,7 +1126,7 @@
       const res = await callApi({ action: "resetAllZones" });
       hideLoading();
       if (res.success) {
-        syncStateData(res.data, true);
+        syncStateData(res.data);
         renderAllViews();
         showToast(res.message);
       }
