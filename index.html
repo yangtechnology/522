@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>寢室整潔管理系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .glass-header {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+    }
+    .step-active {
+      border-color: #2563eb;
+      background-color: #eff6ff;
+      color: #1d4ed8;
+    }
+    .fade-in {
+      animation: fadeIn 0.22s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- 全域載入遮罩 -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex-col items-center justify-center text-white">
+    <div class="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+    <p id="loadingText" class="text-base font-bold tracking-wide">資料同步處理中，請稍候...</p>
+  </div>
+
+  <!-- 頂部訊息通知列 -->
+  <div id="toastBox" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden max-w-md w-[92%] px-4 py-3 rounded-xl shadow-xl text-sm font-bold text-center transition-all"></div>
+
+  <!-- 頂部導覽列 (登入後顯示) -->
+  <header id="appHeader" class="sticky top-0 z-30 glass-header border-b border-slate-200 hidden">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-sm">潔</div>
+        <div>
+          <h1 class="text-base sm:text-lg font-black text-slate-800 leading-tight">泉思學舍・寢室整潔系統</h1>
+          <p id="headerUserBadge" class="text-xs text-slate-500 font-medium"></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- 只有室長看得到的後台切換按鈕 -->
+        <button id="adminPortalBtn" onclick="toggleAdminView()" class="hidden px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold shadow-sm transition">
+          室長管理後台
+        </button>
+        <button onclick="refreshSystemData()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition">
+          重新整理
+        </button>
+        <button onclick="logout()" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs sm:text-sm font-bold transition">
+          登出
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主內容容器 -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6">
+
+    <!-- ==================== 1. 登入畫面 ==================== -->
+    <section id="loginView" class="max-w-md mx-auto mt-8 sm:mt-14 bg-white rounded-3xl shadow-lg border border-slate-200/80 p-6 sm:p-8 fade-in">
+      <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-2xl font-black mb-5 shadow-md">
+        潔
+      </div>
+      <h2 class="text-2xl font-black text-slate-800 mb-1">寢室整潔管理系統</h2>
+      <p class="text-sm text-slate-500 mb-6">四區認領・指定角度示範拍攝・線上與實體雙階段驗收</p>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1.5">輸入姓名或信箱登入</label>
+          <input id="loginInput" type="text" placeholder="請輸入你的姓名或學校信箱" 
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-base transition"
+            onkeydown="if(event.key==='Enter') handleLogin()">
+        </div>
+
+        <!-- 快速選擇成員名單 -->
+        <div id="quickUserListBox" class="hidden">
+          <p class="text-xs font-bold text-slate-400 mb-2">或直接點選你的名字快速帶入：</p>
+          <div id="quickUserButtons" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <button onclick="handleLogin()" class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-base shadow-md transition">
+          進入系統
+        </button>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+          <span>泉思學舍寢室專用</span>
+          <button onclick="openGasUrlModal()" class="text-blue-600 hover:underline font-bold">設定後端連線網址</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. 室友主畫面 (掃區認領與進度總覽) ==================== -->
+    <section id="dashboardView" class="hidden space-y-6 fade-in">
+      
+      <!-- 整體進度與雙階段說明橫幅 -->
+      <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-5 sm:p-6 shadow-md">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <span class="inline-block px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold mb-2">全寢大掃除任務</span>
+            <h2 class="text-xl sm:text-2xl font-black">四大掃區認領與驗收進度</h2>
+            <p id="globalDeadlineText" class="text-xs sm:text-sm text-slate-300 mt-1">打掃截止期限：載入中...</p>
+          </div>
+          <div class="bg-white/10 rounded-2xl px-4 py-3 text-right shrink-0">
+            <p class="text-xs text-slate-300">目前寢室完成度</p>
+            <p id="globalProgressText" class="text-2xl font-black text-emerald-400">0 / 4 區完成</p>
+          </div>
+        </div>
+
+        <!-- 流程步驟提示 -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/10 text-xs">
+          <div class="bg-white/5 rounded-xl p-2.5">
+            <span class="text-blue-400 font-black">步驟一</span>
+            <p class="font-bold mt-0.5">認領專屬掃區</p>
+          </div>
+          <div class="bg-white/5 rounded-xl p-2.5">
+            <span class="text-blue-400 font-black">步驟二</span>
+            <p class="font-bold mt-0.5">依示範照角度拍攝</p>
+          </div>
+          <div class="bg-white/5 rounded-xl p-2.5">
+            <span class="text-amber-400 font-black">步驟三</span>
+            <p class="font-bold mt-0.5">室長線上審核照片</p>
+          </div>
+          <div class="bg-white/5 rounded-xl p-2.5">
+            <span class="text-emerald-400 font-black">步驟四</span>
+            <p class="font-bold mt-0.5">室長實體檢查結案</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 四大掃區卡片列表 -->
+      <div id="zoneCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+    </section>
+
+    <!-- ==================== 3. 引導式分步拍照回報視窗 (Modal) ==================== -->
+    <div id="cameraGuideModal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-40 hidden flex-col justify-center items-center p-3 sm:p-4">
+      <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-hidden fade-in">
+        
+        <!-- 頂部標題與關閉 -->
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div>
+            <span id="guideZoneBadge" class="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">掃區回報</span>
+            <h3 id="guideZoneTitle" class="text-lg font-black text-slate-800 mt-0.5">拍攝上傳打掃成果</h3>
+          </div>
+          <button onclick="closeCameraGuide()" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold">
+            暫時離開
+          </button>
+        </div>
+
+        <!-- 步驟指示器 -->
+        <div class="px-5 py-3 bg-white border-b border-slate-100">
+          <div id="guideStepIndicators" class="flex items-center gap-2 overflow-x-auto pb-1"></div>
+        </div>
+
+        <!-- 捲動內容區：示範照 vs 實拍照 -->
+        <div class="p-5 overflow-y-auto space-y-5 flex-1">
+          
+          <!-- 拍攝部位標題與要求說明 -->
+          <div class="bg-blue-50/70 border border-blue-200 rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-1">
+              <span id="currentCpOrderBadge" class="text-xs font-black text-blue-700">第一張指定角度</span>
+              <span id="currentCpStatusBadge" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">尚未拍攝</span>
+            </div>
+            <h4 id="currentCpTitle" class="text-base font-black text-slate-900">載入中...</h4>
+            <p id="currentCpDesc" class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed"></p>
+          </div>
+
+          <!-- 雙欄對照：左/上為示範照，右/下為室友拍攝照 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- 室長示範照 -->
+            <div class="border border-slate-200 rounded-2xl p-3 bg-slate-50 flex flex-col">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-black text-slate-700">📌 室長指定示範角度</span>
+                <span class="text-[11px] text-slate-400">點圖可放大</span>
+              </div>
+              <div class="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-200">
+                <img id="currentCpDemoImg" src="" alt="示範照片" onclick="openLightbox(this.src)" class="w-full h-full object-cover cursor-pointer hover:opacity-95 transition">
+              </div>
+            </div>
+
+            <!-- 室友實拍預覽 -->
+            <div class="border-2 border-dashed border-blue-300 rounded-2xl p-3 bg-blue-50/20 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-black text-blue-700">📷 你的實拍成果照片</span>
+                <span id="compressHint" class="text-[11px] text-emerald-600 font-bold hidden">已自動壓縮最佳化</span>
+              </div>
+
+              <div id="userPhotoPreviewWrapper" class="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-100 flex flex-col items-center justify-center text-slate-400">
+                <img id="userPhotoPreviewImg" src="" alt="實拍預覽" onclick="openLightbox(this.src)" class="w-full h-full object-cover hidden cursor-pointer">
+                <div id="userPhotoEmptyPlaceholder" class="text-center p-4">
+                  <p class="text-2xl mb-1">📸</p>
+                  <p class="text-xs font-bold text-slate-500">請對照左方示範圖角度拍攝</p>
+                </div>
+              </div>
+
+              <!-- 喚起手機相機或相簿按鈕 -->
+              <label class="mt-3 w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs sm:text-sm text-center cursor-pointer shadow-sm transition block">
+                點擊開啟相機拍照 / 重新選擇照片
+                <input id="cameraFileInput" type="file" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(event)">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部上下一步與送出審核控制列 -->
+        <div class="px-5 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between gap-3">
+          <button id="prevStepBtn" onclick="changeGuideStep(-1)" class="px-4 py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-bold transition">
+            上一個角度
+          </button>
+
+          <div class="flex items-center gap-2">
+            <button id="nextStepBtn" onclick="changeGuideStep(1)" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-bold transition">
+              拍下一張角度
+            </button>
+            <button id="submitAllPhotosBtn" onclick="submitZonePhotos()" class="hidden px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-black shadow-md transition">
+              全部拍完・送交室長初審
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== 4. 室長管理後台畫面 (僅室長可見) ==================== -->
+    <section id="adminView" class="hidden space-y-8 fade-in">
+      
+      <!-- 後台頂部返回列 -->
+      <div class="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-xs font-black mb-1">室長專屬權限</span>
+          <h2 class="text-xl font-black text-slate-900">室長審核與系統管理中心</h2>
+          <p class="text-xs sm:text-sm text-slate-600">可在此進行第一階段線上看圖初審、第二階段現場實體驗收，以及更換示範照與設定期限。</p>
+        </div>
+        <button onclick="toggleAdminView()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-bold shrink-0 self-start sm:self-center">
+          返回一般掃區畫面
+        </button>
+      </div>
+
+      <!-- 區塊 A：各掃區兩階段審核工作台 -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+          <span>🔍 各掃區線上初審與實體驗收</span>
+        </h3>
+        <div id="adminReviewContainer" class="space-y-5"></div>
+      </div>
+
+      <!-- 區塊 B：各掃區拍攝角度與示範照片管理 -->
+      <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+        <div>
+          <h3 class="text-lg font-black text-slate-800">🖼️ 各掃區拍攝檢查點・示範照片設定</h3>
+          <p class="text-xs text-slate-500 mt-0.5">你可以直接用手機拍下乾淨的標準角度上傳作為示範圖，室友打掃時就會看到你設定的對照圖。</p>
+        </div>
+        <div id="adminCheckpointsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <!-- 區塊 C：全寢期限、室友名單與重置管理 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- 截止期限與新一輪重置 -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-5">
+          <div class="space-y-4">
+            <h3 class="text-lg font-black text-slate-800">⏰ 截止期限與學期重置</h3>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5">統一設定打掃截止時間</label>
+              <div class="flex gap-2">
+                <input id="adminDeadlineInput" type="text" placeholder="例如：2026-11-25 23:59" class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm outline-none focus:border-blue-600">
+                <button onclick="saveGlobalDeadline()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shrink-0">
+                  儲存期限
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100">
+            <p class="text-xs text-slate-500 mb-2">當全寢室完成打掃、下次要重新分配掃區時，可一鍵清空認領狀態與舊照片：</p>
+            <button onclick="confirmResetAllZones()" class="w-full py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition">
+              重置全寢室所有掃區狀態（開啟新一輪打掃）
+            </button>
+          </div>
+        </div>
+
+        <!-- 寢室成員名單管理 -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+          <h3 class="text-lg font-black text-slate-800">👥 寢室成員名單設定</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input id="newMemberName" type="text" placeholder="姓名 (必填)" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+            <input id="newMemberEmail" type="text" placeholder="信箱 (選填)" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
+            <select id="newMemberRole" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none bg-white font-bold">
+              <option value="室友">一般室友</option>
+              <option value="室長">室長 (具後台權限)</option>
+            </select>
+          </div>
+          <button onclick="addOrUpdateMember()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition">
+            新增或更新成員
+          </button>
+
+          <div id="adminMemberList" class="divide-y divide-slate-100 max-h-48 overflow-y-auto pt-2"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 圖片放大檢視燈箱 (Lightbox) -->
+  <div id="lightboxModal" onclick="closeLightbox()" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4 cursor-zoom-out">
+    <img id="lightboxImg" src="" alt="放大檢視" class="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain">
+  </div>
+
+  <!-- 後端網址設定視窗 -->
+  <div id="gasUrlModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4">
+      <h3 class="text-lg font-black text-slate-800">設定 Google Apps Script 網址</h3>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        請貼上部署 `code.gs` 後取得的網頁應用程式網址（以 `https://script.google.com/macros/s/.../exec` 結尾）。
+      </p>
+      <input id="gasUrlInput" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:border-blue-600">
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeGasUrlModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">取消</button>
+        <button onclick="saveGasUrl()" class="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold">儲存並連線</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * =========================================================
+     * 請在下方填入你部署好的 Google Apps Script 網頁應用程式網址
+     * =========================================================
+     */
+    const DEFAULT_GAS_URL = "";
+
+    // 全域狀態管理
+    let state = {
+      gasUrl: localStorage.getItem("dorm_clean_gas_url") || DEFAULT_GAS_URL,
+      currentUser: JSON.parse(localStorage.getItem("dorm_clean_user") || "null"),
+      inAdminView: false,
+      users: [],
+      zones: [],
+      checkpoints: [],
+      submissions: [],
+      // 拍照引導暫存狀態
+      activeZoneId: null,
+      activeCheckpoints: [],
+      currentStepIndex: 0,
+      draftPhotos: {} // { checkpointId: { base64Data, previewUrl, existingUrl } }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if (!state.gasUrl) {
+        openGasUrlModal();
+      } else {
+        initApp();
+      }
+    });
+
+    async function initApp() {
+      showLoading("正在同步寢室掃區資料...");
+      const res = await callApi({ action: "init" });
+      hideLoading();
+
+      if (!res || !res.success) {
+        showToast(res?.message || "無法連線至後端資料庫，請檢查網址設定", true);
+        openGasUrlModal();
+        return;
+      }
+
+      syncStateData(res.data);
+      renderQuickUserButtons();
+
+      // 若曾登入過，驗證帳號是否仍存在並自動登入
+      if (state.currentUser) {
+        const matched = state.users.find(u => u.name === state.currentUser.name);
+        if (matched) {
+          state.currentUser = matched;
+          localStorage.setItem("dorm_clean_user", JSON.stringify(matched));
+          enterMainSystem();
+          return;
+        } else {
+          logout();
+        }
+      }
+    }
+
+    function syncStateData(data) {
+      if (!data) return;
+      state.users = data.users || [];
+      state.zones = data.zones || [];
+      state.checkpoints = data.checkpoints || [];
+      state.submissions = data.submissions || [];
+    }
+
+    function renderQuickUserButtons() {
+      const box = document.getElementById("quickUserListBox");
+      const container = document.getElementById("quickUserButtons");
+      if (!state.users.length) {
+        box.classList.add("hidden");
+        return;
+      }
+      box.classList.remove("hidden");
+      container.innerHTML = state.users.map(u => `
+        <button onclick="quickSelectUser('${escapeHtml(u.name)}')" 
+          class="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 text-xs font-bold text-slate-700 transition">
+          ${escapeHtml(u.name)} ${u.role === '室長' ? '👑' : ''}
+        </button>
+      `).join("");
+    }
+
+    function quickSelectUser(name) {
+      document.getElementById("loginInput").value = name;
+      handleLogin();
+    }
+
+    async function handleLogin() {
+      const inputVal = document.getElementById("loginInput").value.trim();
+      if (!inputVal) {
+        showToast("請輸入你的姓名或信箱", true);
+        return;
+      }
+      showLoading("驗證成員身分中...");
+      const res = await callApi({ action: "login", identifier: inputVal });
+      hideLoading();
+
+      if (!res.success) {
+        showToast(res.message, true);
+        return;
+      }
+
+      state.currentUser = res.user;
+      localStorage.setItem("dorm_clean_user", JSON.stringify(res.user));
+      syncStateData(res.data);
+      enterMainSystem();
+      showToast("歡迎回來，" + res.user.name + "！");
+    }
+
+    function enterMainSystem() {
+      document.getElementById("loginView").classList.add("hidden");
+      document.getElementById("appHeader").classList.remove("hidden");
+      document.getElementById("headerUserBadge").textContent = 
+        `目前登入：${state.currentUser.name}（${state.currentUser.role}）`;
+
+      // 嚴格控制只有室長才看得到「室長管理後台」按鈕
+      const adminBtn = document.getElementById("adminPortalBtn");
+      if (state.currentUser.role === "室長") {
+        adminBtn.classList.remove("hidden");
+      } else {
+        adminBtn.classList.add("hidden");
+        state.inAdminView = false;
+      }
+
+      renderAllViews();
+    }
+
+    function logout() {
+      localStorage.removeItem("dorm_clean_user");
+      state.currentUser = null;
+      state.inAdminView = false;
+      document.getElementById("appHeader").classList.add("hidden");
+      document.getElementById("dashboardView").classList.add("hidden");
+      document.getElementById("adminView").classList.add("hidden");
+      document.getElementById("loginView").classList.remove("hidden");
+      document.getElementById("loginInput").value = "";
+      renderQuickUserButtons();
+    }
+
+    async function refreshSystemData() {
+      showLoading("正在更新最新審核狀態...");
+      const res = await callApi({ action: "init" });
+      hideLoading();
+      if (res && res.success) {
+        syncStateData(res.data);
+        renderAllViews();
+        showToast("已同步最新資料");
+      }
+    }
+
+    function toggleAdminView() {
+      if (!state.currentUser || state.currentUser.role !== "室長") return;
+      state.inAdminView = !state.inAdminView;
+      renderAllViews();
+    }
+
+    function renderAllViews() {
+      const dash = document.getElementById("dashboardView");
+      const admin = document.getElementById("adminView");
+      const adminBtn = document.getElementById("adminPortalBtn");
+
+      if (state.inAdminView && state.currentUser?.role === "室長") {
+        dash.classList.add("hidden");
+        admin.classList.remove("hidden");
+        adminBtn.textContent = "返回掃區首頁";
+        renderAdminView();
+      } else {
+        admin.classList.add("hidden");
+        dash.classList.remove("hidden");
+        adminBtn.textContent = "室長管理後台";
+        renderDashboard();
+      }
+    }
+
+    /* ==================== 室友掃區總覽渲染 ==================== */
+
+    function renderDashboard() {
+      const completedCount = state.zones.filter(z => z.status === "已完成").length;
+      document.getElementById("globalProgressText").textContent = `${completedCount} / ${state.zones.length} 區完成`;
+      const firstDeadline = state.zones[0]?.deadline || "未設定";
+      document.getElementById("globalDeadlineText").textContent = `打掃截止期限：${firstDeadline}`;
+
+      const container = document.getElementById("zoneCardsContainer");
+      container.innerHTML = state.zones.map(zone => {
+        const zCheckpoints = state.checkpoints.filter(c => c.zoneId === zone.zoneId);
+        const zSubs = state.submissions.filter(s => s.zoneId === zone.zoneId);
+        const isMine = zone.assignee === state.currentUser?.name;
+        const badgeStyle = getStatusStyle(zone.status);
+
+        // 檢查點小標籤列表
+        const cpPills = zCheckpoints.map(cp => {
+          const uploaded = zSubs.some(s => s.checkpointId === cp.checkpointId && s.photoUrl);
+          return `
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${uploaded ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
+              ${uploaded ? '✅' : '📷'} ${escapeHtml(cp.order + '. ' + cp.title)}
+            </span>
+          `;
+        }).join("");
+
+        // 室長評語區塊
+        const commentHtml = zone.comment ? `
+          <div class="mt-3 p-3 rounded-2xl text-xs font-bold ${zone.status.includes('退回') ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-blue-50 text-blue-800 border border-blue-200'}">
+            💬 室長審核評語：${escapeHtml(zone.comment)}
+          </div>
+        ` : "";
+
+        // 底部操作按鈕邏輯
+        let actionBtns = "";
+        if (zone.status === "未認領" || !zone.assignee) {
+          actionBtns = `
+            <button onclick="handleClaimZone('${zone.zoneId}')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm transition">
+              認領此掃區
+            </button>
+          `;
+        } else if (isMine) {
+          if (zone.status === "打掃中" || zone.status === "線上退回" || zone.status === "實體退回") {
+            actionBtns = `
+              <div class="flex gap-2">
+                <button onclick="openCameraGuide('${zone.zoneId}')" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-sm transition">
+                  📸 開始拍照上傳成果 (${zSubs.length}/${zCheckpoints.length})
+                </button>
+                <button onclick="handleReleaseZone('${zone.zoneId}', false)" class="px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs transition">
+                  放棄認領
+                </button>
+              </div>
+            `;
+          } else if (zone.status === "待線上審核") {
+            actionBtns = `
+              <div class="flex gap-2 items-center">
+                <span class="flex-1 py-2.5 px-3 rounded-xl bg-amber-50 text-amber-800 font-bold text-xs text-center border border-amber-200">
+                  ⏳ 已送出照片，等待室長進行第一階段線上初審
+                </span>
+                <button onclick="openCameraGuide('${zone.zoneId}')" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs shrink-0">
+                  修改重傳
+                </button>
+              </div>
+            `;
+          } else if (zone.status === "待實體檢查") {
+            actionBtns = `
+              <div class="py-2.5 px-3 rounded-xl bg-purple-50 text-purple-800 font-bold text-xs text-center border border-purple-200">
+                🎉 線上照片初審已通過！請等待室長有空時進行實體檢查
+              </div>
+            `;
+          } else if (zone.status === "已完成") {
+            actionBtns = `
+              <div class="py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-800 font-black text-xs text-center border border-emerald-200">
+                🏆 線上與實體檢查皆通過！已完成本區打掃
+              </div>
+            `;
+          }
+        } else {
+          // 他人認領的掃區
+          actionBtns = `
+            <div class="py-2.5 px-3 rounded-xl bg-slate-100 text-slate-500 font-bold text-xs text-center">
+              由室友「${escapeHtml(zone.assignee)}」負責打掃中
+            </div>
+          `;
+        }
+
+        return `
+          <div class="bg-white rounded-3xl border ${isMine ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'} p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-3">
+                <div>
+                  <span class="text-xs font-black text-slate-400">${escapeHtml(zone.zoneId)}</span>
+                  <h3 class="text-lg font-black text-slate-800">${escapeHtml(zone.name)}</h3>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-black shrink-0 ${badgeStyle}">
+                  ${escapeHtml(zone.status)}
+                </span>
+              </div>
+
+              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">${escapeHtml(zone.description)}</p>
+
+              <div class="bg-slate-50 rounded-2xl p-3.5 mb-4 space-y-2 border border-slate-100">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-500 font-medium">負責成員：</span>
+                  <span class="font-black ${zone.assignee ? 'text-slate-800' : 'text-slate-400'}">
+                    ${zone.assignee ? escapeHtml(zone.assignee) + (isMine ? ' (你)' : '') : '尚未有人認領'}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-500 font-medium">需拍攝檢核角度：</span>
+                  <span class="font-bold text-slate-700">共 ${zCheckpoints.length} 張示範對照圖</span>
+                </div>
+                <div class="pt-1 flex flex-wrap gap-1.5">
+                  ${cpPills}
+                </div>
+              </div>
+
+              ${commentHtml}
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100">
+              ${actionBtns}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function getStatusStyle(status) {
+      switch (status) {
+        case "未認領": return "bg-slate-100 text-slate-600";
+        case "打掃中": return "bg-blue-100 text-blue-700";
+        case "待線上審核": return "bg-amber-100 text-amber-800";
+        case "線上退回": return "bg-rose-100 text-rose-700";
+        case "待實體檢查": return "bg-purple-100 text-purple-800";
+        case "實體退回": return "bg-rose-100 text-rose-700";
+        case "已完成": return "bg-emerald-100 text-emerald-800";
+        default: return "bg-slate-100 text-slate-700";
+      }
+    }
+
+    async function handleClaimZone(zoneId) {
+      showLoading("正在為你登記認領掃區...");
+      const res = await callApi({
+        action: "claimZone",
+        zoneId: zoneId,
+        userName: state.currentUser.name
+      });
+      hideLoading();
+
+      if (!res.success) {
+        showToast(res.message, true);
+        return;
+      }
+      syncStateData(res.data);
+      renderAllViews();
+      showToast(res.message);
+    }
+
+    async function handleReleaseZone(zoneId, isAdmin) {
+      if (!confirm("確定要釋出這個掃區嗎？已上傳的暫存照片將會被清除。")) return;
+      showLoading("正在釋出掃區...");
+      const res = await callApi({
+        action: "releaseZone",
+        zoneId: zoneId,
+        userName: state.currentUser.name,
+        isAdmin: isAdmin
+      });
+      hideLoading();
+
+      if (!res.success) {
+        showToast(res.message, true);
+        return;
+      }
+      syncStateData(res.data);
+      renderAllViews();
+      showToast(res.message);
+    }
+
+    /* ==================== 引導式分步拍照與壓縮上傳邏輯 ==================== */
+
+    function openCameraGuide(zoneId) {
+      const zone = state.zones.find(z => z.zoneId === zoneId);
+      const cps = state.checkpoints.filter(c => c.zoneId === zoneId).sort((a, b) => a.order - b.order);
+      if (!zone || !cps.length) {
+        showToast("此掃區尚未設定拍攝檢查點", true);
+        return;
+      }
+
+      state.activeZoneId = zoneId;
+      state.activeCheckpoints = cps;
+      state.currentStepIndex = 0;
+      state.draftPhotos = {};
+
+      // 載入已上傳過的舊照片紀錄作為預設預覽
+      cps.forEach(cp => {
+        const sub = state.submissions.find(s => s.zoneId === zoneId && s.checkpointId === cp.checkpointId);
+        if (sub && sub.photoUrl) {
+          state.draftPhotos[cp.checkpointId] = {
+            base64Data: null,
+            previewUrl: sub.photoUrl,
+            existingUrl: sub.photoUrl
+          };
+        }
+      });
+
+      document.getElementById("guideZoneBadge").textContent = zone.zoneId + " 成果回報";
+      document.getElementById("guideZoneTitle").textContent = zone.name;
+      document.getElementById("cameraGuideModal").classList.remove("hidden");
+      document.getElementById("cameraGuideModal").classList.add("flex");
+
+      renderCurrentGuideStep();
+    }
+
+    function closeCameraGuide() {
+      document.getElementById("cameraGuideModal").classList.add("hidden");
+      document.getElementById("cameraGuideModal").classList.remove("flex");
+    }
+
+    function renderCurrentGuideStep() {
+      const cps = state.activeCheckpoints;
+      const idx = state.currentStepIndex;
+      const currentCp = cps[idx];
+
+      // 頂部步驟按鈕列
+      const indicatorHtml = cps.map((cp, i) => {
+        const hasPhoto = Boolean(state.draftPhotos[cp.checkpointId]);
+        const isCurrent = i === idx;
+        return `
+          <button onclick="jumpToGuideStep(${i})" 
+            class="px-3 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition ${isCurrent ? 'step-active font-black' : (hasPhoto ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-500')}">
+            ${hasPhoto ? '✅' : '📷'} 角度 ${i + 1}：${escapeHtml(cp.title)}
+          </button>
+        `;
+      }).join("");
+      document.getElementById("guideStepIndicators").innerHTML = indicatorHtml;
+
+      // 當前角度資訊
+      document.getElementById("currentCpOrderBadge").textContent = `第 ${idx + 1} / ${cps.length} 張指定角度`;
+      document.getElementById("currentCpTitle").textContent = currentCp.title;
+      document.getElementById("currentCpDesc").textContent = currentCp.description;
+      document.getElementById("currentCpDemoImg").src = currentCp.demoUrl;
+
+      const draft = state.draftPhotos[currentCp.checkpointId];
+      const statusBadge = document.getElementById("currentCpStatusBadge");
+      const previewImg = document.getElementById("userPhotoPreviewImg");
+      const emptyBox = document.getElementById("userPhotoEmptyPlaceholder");
+      const compressHint = document.getElementById("compressHint");
+
+      if (draft && draft.previewUrl) {
+        statusBadge.textContent = "已拍攝準備就緒";
+        statusBadge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800";
+        previewImg.src = draft.previewUrl;
+        previewImg.classList.remove("hidden");
+        emptyBox.classList.add("hidden");
+        if (draft.base64Data) {
+          compressHint.classList.remove("hidden");
+        } else {
+          compressHint.classList.add("hidden");
+        }
+      } else {
+        statusBadge.textContent = "尚未拍攝";
+        statusBadge.className = "text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800";
+        previewImg.src = "";
+        previewImg.classList.add("hidden");
+        emptyBox.classList.remove("hidden");
+        compressHint.classList.add("hidden");
+      }
+
+      // 清空 file input 以便重複選取同檔案
+      document.getElementById("cameraFileInput").value = "";
+
+      // 控制底部按鈕顯示
+      document.getElementById("prevStepBtn").disabled = (idx === 0);
+      document.getElementById("prevStepBtn").classList.toggle("opacity-40", idx === 0);
+
+      const allCompleted = cps.every(cp => Boolean(state.draftPhotos[cp.checkpointId]));
+      const nextBtn = document.getElementById("nextStepBtn");
+      const submitBtn = document.getElementById("submitAllPhotosBtn");
+
+      if (idx < cps.length - 1) {
+        nextBtn.classList.remove("hidden");
+      } else {
+        nextBtn.classList.add("hidden");
+      }
+
+      if (allCompleted) {
+        submitBtn.classList.remove("hidden");
+      } else {
+        submitBtn.classList.add("hidden");
+      }
+    }
+
+    function changeGuideStep(delta) {
+      const nextIdx = state.currentStepIndex + delta;
+      if (nextIdx >= 0 && nextIdx < state.activeCheckpoints.length) {
+        state.currentStepIndex = nextIdx;
+        renderCurrentGuideStep();
+      }
+    }
+
+    function jumpToGuideStep(index) {
+      state.currentStepIndex = index;
+      renderCurrentGuideStep();
+    }
+
+    async function handlePhotoSelected(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      showLoading("正在處理並壓縮照片畫質...");
+      try {
+        const compressedBase64 = await compressImageFile(file, 1200, 0.8);
+        const currentCp = state.activeCheckpoints[state.currentStepIndex];
+        state.draftPhotos[currentCp.checkpointId] = {
+          base64Data: compressedBase64,
+          previewUrl: compressedBase64,
+          existingUrl: null
+        };
+        hideLoading();
+        renderCurrentGuideStep();
+        showToast(`已完成「${currentCp.title}」角度拍攝！`);
+
+        // 若還沒到最後一張，0.5 秒後自動跳往下一張角度
+        if (state.currentStepIndex < state.activeCheckpoints.length - 1) {
+          setTimeout(() => {
+            changeGuideStep(1);
+          }, 550);
+        }
+      } catch (err) {
+        hideLoading();
+        showToast("讀取照片失敗，請重試", true);
+      }
+    }
+
+    async function submitZonePhotos() {
+      const cps = state.activeCheckpoints;
+      const missing = cps.filter(cp => !state.draftPhotos[cp.checkpointId]);
+      if (missing.length > 0) {
+        showToast(`還有 ${missing.length} 張指定角度尚未拍攝！`, true);
+        return;
+      }
+
+      const payloadPhotos = cps.map(cp => ({
+        checkpointId: cp.checkpointId,
+        base64Data: state.draftPhotos[cp.checkpointId].base64Data,
+        existingUrl: state.draftPhotos[cp.checkpointId].existingUrl
+      }));
+
+      showLoading("正在將照片上傳至雲端並送交室長初審...");
+      const res = await callApi({
+        action: "submitPhotos",
+        zoneId: state.activeZoneId,
+        userName: state.currentUser.name,
+        photos: payloadPhotos
+      });
+      hideLoading();
+
+      if (!res.success) {
+        showToast(res.message, true);
+        return;
+      }
+
+      syncStateData(res.data);
+      closeCameraGuide();
+      renderAllViews();
+      showToast(res.message);
+    }
+
+    /* ==================== 室長管理後台渲染與操作 ==================== */
+
+    function renderAdminView() {
+      // 1. 渲染各掃區審核卡片
+      const reviewContainer = document.getElementById("adminReviewContainer");
+      reviewContainer.innerHTML = state.zones.map(zone => {
+        const zCheckpoints = state.checkpoints.filter(c => c.zoneId === zone.zoneId);
+        const zSubs = state.submissions.filter(s => s.zoneId === zone.zoneId);
+        const badgeStyle = getStatusStyle(zone.status);
+
+        // 每個檢查點的「示範圖 vs 室友實拍圖」並排對照
+        const compareGrid = zCheckpoints.map(cp => {
+          const sub = zSubs.find(s => s.checkpointId === cp.checkpointId);
+          return `
+            <div class="border border-slate-200 rounded-2xl p-3 bg-slate-50/70 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-slate-800">角度 ${cp.order}：${escapeHtml(cp.title)}</span>
+                <span class="text-[11px] font-bold ${sub ? 'text-emerald-600' : 'text-slate-400'}">
+                  ${sub ? '上傳於 ' + escapeHtml(sub.timestamp) : '尚未上傳'}
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <p class="text-[11px] text-slate-500 mb-1">標準示範照</p>
+                  <img src="${escapeHtml(cp.demoUrl)}" onclick="openLightbox(this.src)" class="w-full aspect-[4/3] object-cover rounded-xl bg-slate-200 cursor-pointer">
+                </div>
+                <div>
+                  <p class="text-[11px] text-blue-600 font-bold mb-1">室友實拍照</p>
+                  ${sub && sub.photoUrl ? `
+                    <img src="${escapeHtml(sub.photoUrl)}" onclick="openLightbox(this.src)" class="w-full aspect-[4/3] object-cover rounded-xl bg-slate-200 border-2 border-blue-400 cursor-pointer">
+                  ` : `
+                    <div class="w-full aspect-[4/3] rounded-xl bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-xs text-slate-400 font-bold">
+                      未上傳
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <span class="text-xs font-black text-slate-400">${escapeHtml(zone.zoneId)}</span>
+                <h4 class="text-lg font-black text-slate-900">${escapeHtml(zone.name)}</h4>
+                <p class="text-xs text-slate-500">認領室友：<strong class="text-slate-800">${escapeHtml(zone.assignee || '尚未認領')}</strong></p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full text-xs font-black ${badgeStyle}">${escapeHtml(zone.status)}</span>
+                ${zone.assignee ? `
+                  <button onclick="handleReleaseZone('${zone.zoneId}', true)" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold">
+                    強制退選
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- 並排照片檢視區 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${compareGrid}
+            </div>
+
+            <!-- 審核評語與兩階段按鈕 -->
+            <div class="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-200/70">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">室長審核評語 / 退回重掃原因說明</label>
+                <input id="reviewComment_${zone.zoneId}" type="text" value="${escapeHtml(zone.comment)}" 
+                  placeholder="例如：排水孔邊緣還有毛髮，請刷乾淨後重拍第2張" 
+                  class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white outline-none focus:border-blue-600">
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button onclick="adminReviewOnline('${zone.zoneId}', true)" class="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition">
+                  ✅ 通過線上初審
+                </button>
+                <button onclick="adminReviewOnline('${zone.zoneId}', false)" class="py-2.5 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-sm transition">
+                  ↩️ 線上退回重拍
+                </button>
+                <button onclick="adminReviewPhysical('${zone.zoneId}', true)" class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-sm transition">
+                  🏆 實體檢查通過 (結案)
+                </button>
+                <button onclick="adminReviewPhysical('${zone.zoneId}', false)" class="py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition">
+                  ⚠️ 實體退回重掃
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // 2. 渲染檢查點示範照管理
+      const cpContainer = document.getElementById("adminCheckpointsContainer");
+      cpContainer.innerHTML = state.checkpoints.map(cp => {
+        const zone = state.zones.find(z => z.zoneId === cp.zoneId);
+        return `
+          <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-between space-y-3">
+            <div class="flex gap-3">
+              <img src="${escapeHtml(cp.demoUrl)}" onclick="openLightbox(this.src)" class="w-24 h-20 rounded-xl object-cover bg-slate-200 shrink-0 cursor-pointer">
+              <div class="flex-1 min-w-0 space-y-1.5">
+                <span class="text-[11px] font-black text-blue-600">${escapeHtml(zone?.name || cp.zoneId)}・角度 ${cp.order}</span>
+                <input id="cpTitle_${cp.checkpointId}" type="text" value="${escapeHtml(cp.title)}" class="w-full px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold bg-white">
+                <input id="cpDesc_${cp.checkpointId}" type="text" value="${escapeHtml(cp.description)}" class="w-full px-2.5 py-1 rounded-lg border border-slate-300 text-xs bg-white">
+              </div>
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <label class="flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs text-center cursor-pointer transition">
+                📷 拍照更換示範圖
+                <input type="file" accept="image/*" class="hidden" onchange="uploadNewDemoPhoto(event, '${cp.checkpointId}')">
+              </label>
+              <button onclick="saveCheckpointText('${cp.checkpointId}')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold">
+                儲存文字
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // 3. 填入目前截止時間與成員名單
+      document.getElementById("adminDeadlineInput").value = state.zones[0]?.deadline || "";
+      const memberList = document.getElementById("adminMemberList");
+      memberList.innerHTML = state.users.map(u => `
+        <div class="py-2.5 flex items-center justify-between text-xs">
+          <div>
+            <span class="font-black text-slate-800">${escapeHtml(u.name)}</span>
+            <span class="ml-1.5 px-2 py-0.5 rounded-md ${u.role === '室長' ? 'bg-amber-100 text-amber-800 font-black' : 'bg-slate-100 text-slate-600'}">${escapeHtml(u.role)}</span>
+            <span class="text-slate-400 ml-2">${escapeHtml(u.email)}</span>
+          </div>
+          ${u.name !== state.currentUser.name ? `
+            <button onclick="deleteMember('${escapeHtml(u.name)}')" class="text-rose-500 hover:underline font-bold">移除</button>
+          ` : '<span class="text-slate-300 font-bold">本人</span>'}
+        </div>
+      `).join("");
+    }
+
+    async function adminReviewOnline(zoneId, approved) {
+      const comment = document.getElementById("reviewComment_" + zoneId).value.trim();
+      showLoading("正在更新線上初審結果...");
+      const res = await callApi({ action: "reviewOnline", zoneId, approved, comment });
+      hideLoading();
+      if (res.success) {
+        syncStateData(res.data);
+        renderAllViews();
+        showToast(res.message);
+      } else {
+        showToast(res.message, true);
+      }
+    }
+
+    async function adminReviewPhysical(zoneId, approved) {
+      const comment = document.getElementById("reviewComment_" + zoneId).value.trim();
+      showLoading("正在更新實體檢查結果...");
+      const res = await callApi({ action: "reviewPhysical", zoneId, approved, comment });
+      hideLoading();
+      if (res.success) {
+        syncStateData(res.data);
+        renderAllViews();
+        showToast(res.message);
+      } else {
+        showToast(res.message, true);
+      }
+    }
+
+    async function uploadNewDemoPhoto(event, checkpointId) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const title = document.getElementById("cpTitle_" + checkpointId).value.trim();
+      const desc = document.getElementById("cpDesc_" + checkpointId).value.trim();
+
+      showLoading("正在壓縮並上傳新的示範照片...");
+      try {
+        const base64Data = await compressImageFile(file, 1200, 0.82);
+        const res = await callApi({
+          action: "updateCheckpointDemo",
+          checkpointId,
+          base64Data,
+          title,
+          desc
+        });
+        hideLoading();
+        if (res.success) {
+          syncStateData(res.data);
+          renderAllViews();
+          showToast(res.message);
+        } else {
+          showToast(res.message, true);
+        }
+      } catch (e) {
+        hideLoading();
+        showToast("更換示範照失敗", true);
+      }
+    }
+
+    async function saveCheckpointText(checkpointId) {
+      const title = document.getElementById("cpTitle_" + checkpointId).value.trim();
+      const desc = document.getElementById("cpDesc_" + checkpointId).value.trim();
+      showLoading("儲存檢查點說明中...");
+      const res = await callApi({
+        action: "updateCheckpointDemo",
+        checkpointId,
+        title,
+        desc
+      });
+      hideLoading();
+      if (res.success) {
+        syncStateData(res.data);
+        renderAllViews();
+        showToast("已更新檢查點文字說明");
+      }
+    }
+
+    async function saveGlobalDeadline() {
+      const deadline = document.getElementById("adminDeadlineInput").value.trim();
+      if (!deadline) return showToast("請輸入截止時間", true);
+      showLoading("正在更新全寢室截止期限...");
+      const res = await callApi({ action: "updateDeadline", deadline });
+      hideLoading();
+      if (res.success) {
+        syncStateData(res.data);
+        renderAllViews();
+        showToast(res.message);
+      }
+    }
+
+    async function addOrUpdateMember() {
+      const name = document.getElementById("newMemberName").value.trim();
+      const email = document.getElementById("newMemberEmail").value.trim();
+      const role = document.getElementById("newMemberRole").value;
+      if (!name) return showToast("請輸入成員姓名", true);
+
+      showLoading("正在更新寢室成員名單...");
+      const res = await callApi({ action: "manageUser", subAction: "add", name, email, role });
+      hideLoading();
+      if (res.success) {
+        document.getElementById("newMemberName").value = "";
+        document.getElementById("newMemberEmail").value = "";
+        syncStateData(res.data);
+        renderAllViews();
+        showToast(res.message);
+      }
+    }
+
+    async function deleteMember(name) {
+      if (!confirm(`確定要移除成員「${name}」嗎？`)) return;
+      showLoading("正在移除成員...");
+      const res = await callApi({ action: "manageUser", subAction: "delete", name });
+      hideLoading();
+      if (res.success) {
+        syncStateData(res.data);
+        renderAllViews();
+        showToast(res.message);
+      }
+    }
+
+    async function confirmResetAllZones() {
+      if (!confirm("確定要重置所有掃區的認領狀態與上傳照片嗎？此操作適合開啟新一輪打掃時使用。")) return;
+      showLoading("正在重置全寢室掃區資料...");
+      const res = await callApi({ action: "resetAllZones" });
+      hideLoading();
+      if (res.success) {
+        syncStateData(res.data);
+        renderAllViews();
+        showToast(res.message);
+      }
+    }
+
+    /* ==================== 圖片 Canvas 壓縮與網路請求工具 ==================== */
+
+    function compressImageFile(file, maxWidth = 1200, quality = 0.8) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = event => {
+          const img = new Image();
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function callApi(payload) {
+      if (!state.gasUrl) {
+        openGasUrlModal();
+        return { success: false, message: "尚未設定後端網址" };
+      }
+      try {
+        const response = await fetch(state.gasUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        return await response.json();
+      } catch (err) {
+        return { success: false, message: "網路連線異常，請確認 GAS 部署網址與權限設定為「所有人」" };
+      }
+    }
+
+    function openGasUrlModal() {
+      document.getElementById("gasUrlInput").value = state.gasUrl || "";
+      document.getElementById("gasUrlModal").classList.remove("hidden");
+      document.getElementById("gasUrlModal").classList.add("flex");
+    }
+
+    function closeGasUrlModal() {
+      document.getElementById("gasUrlModal").classList.add("hidden");
+      document.getElementById("gasUrlModal").classList.remove("flex");
+    }
+
+    function saveGasUrl() {
+      const val = document.getElementById("gasUrlInput").value.trim();
+      if (!val.startsWith("https://script.google.com/")) {
+        showToast("請輸入正確的 Google Apps Script 網址", true);
+        return;
+      }
+      state.gasUrl = val;
+      localStorage.setItem("dorm_clean_gas_url", val);
+      closeGasUrlModal();
+      initApp();
+    }
+
+    function openLightbox(src) {
+      if (!src) return;
+      document.getElementById("lightboxImg").src = src;
+      document.getElementById("lightboxModal").classList.remove("hidden");
+      document.getElementById("lightboxModal").classList.add("flex");
+    }
+
+    function closeLightbox() {
+      document.getElementById("lightboxModal").classList.add("hidden");
+      document.getElementById("lightboxModal").classList.remove("flex");
+    }
+
+    function showLoading(text) {
+      document.getElementById("loadingText").textContent = text || "處理中...";
+      const el = document.getElementById("loadingOverlay");
+      el.classList.remove("hidden");
+      el.classList.add("flex");
+    }
+
+    function hideLoading() {
+      const el = document.getElementById("loadingOverlay");
+      el.classList.add("hidden");
+      el.classList.remove("flex");
+    }
+
+    let toastTimer = null;
+    function showToast(msg, isError = false) {
+      const box = document.getElementById("toastBox");
+      box.textContent = msg;
+      box.className = `fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-[92%] px-4 py-3 rounded-2xl shadow-xl text-sm font-bold text-center transition-all ${
+        isError ? "bg-rose-600 text-white" : "bg-slate-900 text-white"
+      }`;
+      box.classList.remove("hidden");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.add("hidden");
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
