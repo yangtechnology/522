@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>寢室整潔管理系統</title>
+  <title>522打掃系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
@@ -44,24 +44,27 @@
 
   <!-- 頂部導覽列 (登入後顯示) -->
   <header id="appHeader" class="sticky top-0 z-30 glass-header border-b border-slate-200 hidden">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-sm">潔</div>
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow-sm">522</div>
         <div>
-          <h1 class="text-base sm:text-lg font-black text-slate-800 leading-tight">泉思學舍・寢室整潔系統</h1>
+          <h1 class="text-base sm:text-lg font-black text-slate-800 leading-tight">522打掃系統</h1>
           <p id="headerUserBadge" class="text-xs text-slate-500 font-medium"></p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <!-- 只有室長看得到的後台切換按鈕 -->
-        <button id="adminPortalBtn" onclick="toggleAdminView()" class="hidden px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold shadow-sm transition">
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- 只有楊定豊看得到的管理後台按鈕 -->
+        <button id="adminPortalBtn" onclick="toggleAdminView()" class="hidden px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold shadow-sm transition">
           室長管理後台
         </button>
-        <button onclick="refreshSystemData()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition">
+        <button onclick="openPasswordModal()" class="px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition">
+          修改密碼
+        </button>
+        <button onclick="refreshSystemData()" class="px-2.5 sm:px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition">
           重新整理
         </button>
-        <button onclick="logout()" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs sm:text-sm font-bold transition">
+        <button onclick="logout()" class="px-2.5 sm:px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs sm:text-sm font-bold transition">
           登出
         </button>
       </div>
@@ -69,81 +72,75 @@
   </header>
 
   <!-- 主內容容器 -->
-  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6">
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
 
     <!-- ==================== 1. 登入畫面 ==================== -->
-    <section id="loginView" class="max-w-md mx-auto mt-8 sm:mt-14 bg-white rounded-3xl shadow-lg border border-slate-200/80 p-6 sm:p-8 fade-in">
-      <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-2xl font-black mb-5 shadow-md">
-        潔
+    <section id="loginView" class="max-w-md mx-auto mt-6 sm:mt-12 bg-white rounded-3xl shadow-lg border border-slate-200/80 p-6 sm:p-8 fade-in">
+      <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl font-black mb-5 shadow-md">
+        522
       </div>
-      <h2 class="text-2xl font-black text-slate-800 mb-1">寢室整潔管理系統</h2>
-      <p class="text-sm text-slate-500 mb-6">四區認領・指定角度示範拍攝・線上與實體雙階段驗收</p>
+      <h2 class="text-2xl font-black text-slate-800 mb-1">522打掃系統</h2>
+      <p class="text-sm text-slate-500 mb-6">四區認領・打掃完拍照上傳・線上與實體雙階段驗收</p>
 
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-bold text-slate-700 mb-1.5">輸入姓名或信箱登入</label>
-          <input id="loginInput" type="text" placeholder="請輸入你的姓名或學校信箱" 
-            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-base transition"
-            onkeydown="if(event.key==='Enter') handleLogin()">
+          <label class="block text-sm font-bold text-slate-700 mb-1.5">輸入姓名或床號登入</label>
+          <input id="loginInput" type="text" placeholder="請輸入姓名或床號 (1、2、3、4)" 
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-base transition">
         </div>
 
-        <!-- 快速選擇成員名單 -->
-        <div id="quickUserListBox" class="hidden">
-          <p class="text-xs font-bold text-slate-400 mb-2">或直接點選你的名字快速帶入：</p>
-          <div id="quickUserButtons" class="flex flex-wrap gap-2"></div>
+        <!-- 快速選擇床位 -->
+        <div>
+          <p class="text-xs font-bold text-slate-500 mb-2">或直接點選床位快速帶入：</p>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" onclick="quickSelectBed('1')" class="py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 text-sm font-black text-slate-800 transition">
+              1
+            </button>
+            <button type="button" onclick="quickSelectBed('2')" class="py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 text-sm font-black text-slate-800 transition">
+              2
+            </button>
+            <button type="button" onclick="quickSelectBed('3')" class="py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 text-sm font-black text-slate-800 transition">
+              3
+            </button>
+            <button type="button" onclick="quickSelectBed('4')" class="py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 text-sm font-black text-slate-800 transition">
+              4
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-1.5">四位數密碼（預設 0000，登入後可修改）</label>
+          <input id="loginPasswordInput" type="password" inputmode="numeric" maxlength="4" value="0000" placeholder="請輸入 4 位數密碼" 
+            class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none text-base tracking-widest font-black transition"
+            onkeydown="if(event.key==='Enter') handleLogin()">
         </div>
 
         <button onclick="handleLogin()" class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-base shadow-md transition">
           進入系統
         </button>
-
-        <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-          <span>泉思學舍寢室專用</span>
-          <button onclick="openGasUrlModal()" class="text-blue-600 hover:underline font-bold">設定後端連線網址</button>
-        </div>
       </div>
     </section>
 
-    <!-- ==================== 2. 室友主畫面 (掃區認領與進度總覽) ==================== -->
+    <!-- ==================== 2. 室友主畫面 (依認領狀態智慧過濾) ==================== -->
     <section id="dashboardView" class="hidden space-y-6 fade-in">
       
-      <!-- 整體進度與雙階段說明橫幅 -->
+      <!-- 頂部狀態橫幅 -->
       <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-5 sm:p-6 shadow-md">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span class="inline-block px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold mb-2">全寢大掃除任務</span>
-            <h2 class="text-xl sm:text-2xl font-black">四大掃區認領與驗收進度</h2>
+            <span id="dashStageBadge" class="inline-block px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold mb-2">522 寢室大掃除</span>
+            <h2 id="dashMainTitle" class="text-xl sm:text-2xl font-black">請選擇你要負責的掃區</h2>
             <p id="globalDeadlineText" class="text-xs sm:text-sm text-slate-300 mt-1">打掃截止期限：載入中...</p>
           </div>
-          <div class="bg-white/10 rounded-2xl px-4 py-3 text-right shrink-0">
-            <p class="text-xs text-slate-300">目前寢室完成度</p>
-            <p id="globalProgressText" class="text-2xl font-black text-emerald-400">0 / 4 區完成</p>
-          </div>
-        </div>
-
-        <!-- 流程步驟提示 -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-white/10 text-xs">
-          <div class="bg-white/5 rounded-xl p-2.5">
-            <span class="text-blue-400 font-black">步驟一</span>
-            <p class="font-bold mt-0.5">認領專屬掃區</p>
-          </div>
-          <div class="bg-white/5 rounded-xl p-2.5">
-            <span class="text-blue-400 font-black">步驟二</span>
-            <p class="font-bold mt-0.5">依示範照角度拍攝</p>
-          </div>
-          <div class="bg-white/5 rounded-xl p-2.5">
-            <span class="text-amber-400 font-black">步驟三</span>
-            <p class="font-bold mt-0.5">室長線上審核照片</p>
-          </div>
-          <div class="bg-white/5 rounded-xl p-2.5">
-            <span class="text-emerald-400 font-black">步驟四</span>
-            <p class="font-bold mt-0.5">室長實體檢查結案</p>
+          <div class="bg-white/10 rounded-2xl px-4 py-3 text-left sm:text-right shrink-0">
+            <p class="text-xs text-slate-300">目前個人狀態</p>
+            <p id="personalStatusText" class="text-lg font-black text-emerald-400">尚未認領掃區</p>
           </div>
         </div>
       </div>
 
-      <!-- 四大掃區卡片列表 -->
-      <div id="zoneCardsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+      <!-- 掃區卡片容器 (未認領時顯示剩餘空缺區；已認領後只顯示自己的專屬掃區) -->
+      <div id="zoneCardsContainer" class="grid grid-cols-1 gap-5"></div>
     </section>
 
     <!-- ==================== 3. 引導式分步拍照回報視窗 (Modal) ==================== -->
@@ -153,8 +150,8 @@
         <!-- 頂部標題與關閉 -->
         <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div>
-            <span id="guideZoneBadge" class="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">掃區回報</span>
-            <h3 id="guideZoneTitle" class="text-lg font-black text-slate-800 mt-0.5">拍攝上傳打掃成果</h3>
+            <span id="guideZoneBadge" class="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">掃區成果拍攝</span>
+            <h3 id="guideZoneTitle" class="text-lg font-black text-slate-800 mt-0.5">請依序拍攝指定檢核角度</h3>
           </div>
           <button onclick="closeCameraGuide()" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold">
             暫時離開
@@ -179,12 +176,12 @@
             <p id="currentCpDesc" class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed"></p>
           </div>
 
-          <!-- 雙欄對照：左/上為示範照，右/下為室友拍攝照 -->
+          <!-- 雙欄對照：示範照 vs 實拍照 -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- 室長示範照 -->
+            <!-- 示範照 -->
             <div class="border border-slate-200 rounded-2xl p-3 bg-slate-50 flex flex-col">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-black text-slate-700">📌 室長指定示範角度</span>
+                <span class="text-xs font-black text-slate-700">📌 指定拍攝角度示範</span>
                 <span class="text-[11px] text-slate-400">點圖可放大</span>
               </div>
               <div class="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-200">
@@ -203,7 +200,7 @@
                 <img id="userPhotoPreviewImg" src="" alt="實拍預覽" onclick="openLightbox(this.src)" class="w-full h-full object-cover hidden cursor-pointer">
                 <div id="userPhotoEmptyPlaceholder" class="text-center p-4">
                   <p class="text-2xl mb-1">📸</p>
-                  <p class="text-xs font-bold text-slate-500">請對照左方示範圖角度拍攝</p>
+                  <p class="text-xs font-bold text-slate-500">請對照示範圖角度拍攝</p>
                 </div>
               </div>
 
@@ -227,7 +224,7 @@
               拍下一張角度
             </button>
             <button id="submitAllPhotosBtn" onclick="submitZonePhotos()" class="hidden px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-black shadow-md transition">
-              全部拍完・送交室長初審
+              全部拍完・送交楊定豊初審
             </button>
           </div>
         </div>
@@ -235,25 +232,47 @@
       </div>
     </div>
 
-    <!-- ==================== 4. 室長管理後台畫面 (僅室長可見) ==================== -->
+    <!-- ==================== 4. 修改密碼彈跳視窗 ==================== -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+      <div class="bg-white max-w-sm w-full rounded-3xl p-6 shadow-2xl space-y-4 fade-in">
+        <h3 class="text-lg font-black text-slate-800">修改四位數登入密碼</h3>
+        <p class="text-xs text-slate-500">請輸入你目前的密碼與新的 4 位數數字密碼。</p>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">原密碼</label>
+            <input id="oldPwdInput" type="password" inputmode="numeric" maxlength="4" placeholder="請輸入原 4 位數密碼" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm tracking-widest font-black outline-none focus:border-blue-600">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">新密碼（4 位數字）</label>
+            <input id="newPwdInput" type="password" inputmode="numeric" maxlength="4" placeholder="請輸入新 4 位數密碼" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm tracking-widest font-black outline-none focus:border-blue-600">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="closePasswordModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">取消</button>
+          <button onclick="submitChangePassword()" class="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold">確認修改</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 5. 楊定豊管理後台畫面 (僅室長可見) ==================== -->
     <section id="adminView" class="hidden space-y-8 fade-in">
       
       <!-- 後台頂部返回列 -->
       <div class="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-xs font-black mb-1">室長專屬權限</span>
-          <h2 class="text-xl font-black text-slate-900">室長審核與系統管理中心</h2>
-          <p class="text-xs sm:text-sm text-slate-600">可在此進行第一階段線上看圖初審、第二階段現場實體驗收，以及更換示範照與設定期限。</p>
+          <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-xs font-black mb-1">3號床・楊定豊專屬後台</span>
+          <h2 class="text-xl font-black text-slate-900">522打掃系統・全區審核與管理中心</h2>
+          <p class="text-xs sm:text-sm text-slate-600">可在此檢視四區認領進度、進行第一階段線上照片初審、第二階段現場實體驗收，以及更換示範照。</p>
         </div>
         <button onclick="toggleAdminView()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-bold shrink-0 self-start sm:self-center">
-          返回一般掃區畫面
+          返回個人掃區畫面
         </button>
       </div>
 
       <!-- 區塊 A：各掃區兩階段審核工作台 -->
       <div class="space-y-4">
         <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
-          <span>🔍 各掃區線上初審與實體驗收</span>
+          <span>🔍 四大掃區線上初審與實體驗收</span>
         </h3>
         <div id="adminReviewContainer" class="space-y-5"></div>
       </div>
@@ -261,19 +280,19 @@
       <!-- 區塊 B：各掃區拍攝角度與示範照片管理 -->
       <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
         <div>
-          <h3 class="text-lg font-black text-slate-800">🖼️ 各掃區拍攝檢查點・示範照片設定</h3>
-          <p class="text-xs text-slate-500 mt-0.5">你可以直接用手機拍下乾淨的標準角度上傳作為示範圖，室友打掃時就會看到你設定的對照圖。</p>
+          <h3 class="text-lg font-black text-slate-800">🖼️ 各掃區隱藏檢核點・示範照片設定</h3>
+          <p class="text-xs text-slate-500 mt-0.5">室友在按下「開始拍照」前不會看到這些檢核點。你可隨時拍照替換標準示範圖。</p>
         </div>
         <div id="adminCheckpointsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
-      <!-- 區塊 C：全寢期限、室友名單與重置管理 -->
+      <!-- 區塊 C：全寢期限、密碼重設與新一輪重置 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         <!-- 截止期限與新一輪重置 -->
         <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-5">
           <div class="space-y-4">
-            <h3 class="text-lg font-black text-slate-800">⏰ 截止期限與學期重置</h3>
+            <h3 class="text-lg font-black text-slate-800">⏰ 截止期限與新一輪重置</h3>
             <div>
               <label class="block text-xs font-bold text-slate-600 mb-1.5">統一設定打掃截止時間</label>
               <div class="flex gap-2">
@@ -288,27 +307,18 @@
           <div class="pt-4 border-t border-slate-100">
             <p class="text-xs text-slate-500 mb-2">當全寢室完成打掃、下次要重新分配掃區時，可一鍵清空認領狀態與舊照片：</p>
             <button onclick="confirmResetAllZones()" class="w-full py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition">
-              重置全寢室所有掃區狀態（開啟新一輪打掃）
+              重置 522 所有掃區狀態（開啟新一輪打掃）
             </button>
           </div>
         </div>
 
-        <!-- 寢室成員名單管理 -->
+        <!-- 522 床位成員與密碼重設 -->
         <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
-          <h3 class="text-lg font-black text-slate-800">👥 寢室成員名單設定</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <input id="newMemberName" type="text" placeholder="姓名 (必填)" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
-            <input id="newMemberEmail" type="text" placeholder="信箱 (選填)" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none">
-            <select id="newMemberRole" class="px-3 py-2 rounded-xl border border-slate-300 text-xs outline-none bg-white font-bold">
-              <option value="室友">一般室友</option>
-              <option value="室長">室長 (具後台權限)</option>
-            </select>
+          <div>
+            <h3 class="text-lg font-black text-slate-800">🛏️ 522 寢室成員名單與密碼管理</h3>
+            <p class="text-xs text-slate-500 mt-0.5">若室友忘記自己改過的密碼，可幫他重設回預設的 0000。</p>
           </div>
-          <button onclick="addOrUpdateMember()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition">
-            新增或更新成員
-          </button>
-
-          <div id="adminMemberList" class="divide-y divide-slate-100 max-h-48 overflow-y-auto pt-2"></div>
+          <div id="adminMemberList" class="divide-y divide-slate-100 pt-1"></div>
         </div>
 
       </div>
@@ -321,33 +331,21 @@
     <img id="lightboxImg" src="" alt="放大檢視" class="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain">
   </div>
 
-  <!-- 後端網址設定視窗 -->
-  <div id="gasUrlModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4">
-      <h3 class="text-lg font-black text-slate-800">設定 Google Apps Script 網址</h3>
-      <p class="text-xs text-slate-500 leading-relaxed">
-        請貼上部署 `code.gs` 後取得的網頁應用程式網址（以 `https://script.google.com/macros/s/.../exec` 結尾）。
-      </p>
-      <input id="gasUrlInput" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:border-blue-600">
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeGasUrlModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">取消</button>
-        <button onclick="saveGasUrl()" class="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold">儲存並連線</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    /**
-     * =========================================================
-     * 請在下方填入你部署好的 Google Apps Script 網頁應用程式網址
-     * =========================================================
-     */
-    const DEFAULT_GAS_URL = "";
+    // 固定綁定你提供的 GAS 部署網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7lHJcXe3iAaycDpz3zwFFYWdaIaEuSjjkXAENkiEqmxRQmfWtaGj8-NNbI7DGf-kU/exec";
+
+    // 522 固定床位對照表（供快速帶入與顯示）
+    const BED_MAP = {
+      "1": "賴千睿",
+      "2": "李諶",
+      "3": "楊定豊",
+      "4": "林宗毅"
+    };
 
     // 全域狀態管理
     let state = {
-      gasUrl: localStorage.getItem("dorm_clean_gas_url") || DEFAULT_GAS_URL,
-      currentUser: JSON.parse(localStorage.getItem("dorm_clean_user") || "null"),
+      currentUser: JSON.parse(localStorage.getItem("dorm522_user") || "null"),
       inAdminView: false,
       users: [],
       zones: [],
@@ -357,37 +355,30 @@
       activeZoneId: null,
       activeCheckpoints: [],
       currentStepIndex: 0,
-      draftPhotos: {} // { checkpointId: { base64Data, previewUrl, existingUrl } }
+      draftPhotos: {}
     };
 
     window.addEventListener("DOMContentLoaded", () => {
-      if (!state.gasUrl) {
-        openGasUrlModal();
-      } else {
-        initApp();
-      }
+      initApp();
     });
 
     async function initApp() {
-      showLoading("正在同步寢室掃區資料...");
+      showLoading("正在載入 522打掃系統...");
       const res = await callApi({ action: "init" });
       hideLoading();
 
       if (!res || !res.success) {
-        showToast(res?.message || "無法連線至後端資料庫，請檢查網址設定", true);
-        openGasUrlModal();
+        showToast(res?.message || "無法連線至後端資料庫，請確認 GAS 是否已更新為新版本", true);
         return;
       }
 
       syncStateData(res.data);
-      renderQuickUserButtons();
 
-      // 若曾登入過，驗證帳號是否仍存在並自動登入
       if (state.currentUser) {
         const matched = state.users.find(u => u.name === state.currentUser.name);
         if (matched) {
           state.currentUser = matched;
-          localStorage.setItem("dorm_clean_user", JSON.stringify(matched));
+          localStorage.setItem("dorm522_user", JSON.stringify(matched));
           enterMainSystem();
           return;
         } else {
@@ -404,35 +395,32 @@
       state.submissions = data.submissions || [];
     }
 
-    function renderQuickUserButtons() {
-      const box = document.getElementById("quickUserListBox");
-      const container = document.getElementById("quickUserButtons");
-      if (!state.users.length) {
-        box.classList.add("hidden");
-        return;
-      }
-      box.classList.remove("hidden");
-      container.innerHTML = state.users.map(u => `
-        <button onclick="quickSelectUser('${escapeHtml(u.name)}')" 
-          class="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 text-xs font-bold text-slate-700 transition">
-          ${escapeHtml(u.name)} ${u.role === '室長' ? '👑' : ''}
-        </button>
-      `).join("");
-    }
-
-    function quickSelectUser(name) {
-      document.getElementById("loginInput").value = name;
-      handleLogin();
+    function quickSelectBed(bedNo) {
+      document.getElementById("loginInput").value = bedNo;
+      const pwdInput = document.getElementById("loginPasswordInput");
+      if (!pwdInput.value) pwdInput.value = "0000";
+      showToast(`已帶入 ${bedNo}號床（${BED_MAP[bedNo]}）`);
     }
 
     async function handleLogin() {
       const inputVal = document.getElementById("loginInput").value.trim();
+      const pwdVal = document.getElementById("loginPasswordInput").value.trim();
+
       if (!inputVal) {
-        showToast("請輸入你的姓名或信箱", true);
+        showToast("請輸入姓名或床號（1～4）", true);
         return;
       }
-      showLoading("驗證成員身分中...");
-      const res = await callApi({ action: "login", identifier: inputVal });
+      if (!/^\d{4}$/.test(pwdVal)) {
+        showToast("請輸入 4 位數密碼（預設為 0000）", true);
+        return;
+      }
+
+      showLoading("驗證身分與密碼中...");
+      const res = await callApi({
+        action: "login",
+        identifier: inputVal,
+        password: pwdVal
+      });
       hideLoading();
 
       if (!res.success) {
@@ -441,21 +429,21 @@
       }
 
       state.currentUser = res.user;
-      localStorage.setItem("dorm_clean_user", JSON.stringify(res.user));
+      localStorage.setItem("dorm522_user", JSON.stringify(res.user));
       syncStateData(res.data);
       enterMainSystem();
-      showToast("歡迎回來，" + res.user.name + "！");
+      showToast(`歡迎登入，${res.user.bed}號床 ${res.user.name}！`);
     }
 
     function enterMainSystem() {
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("appHeader").classList.remove("hidden");
       document.getElementById("headerUserBadge").textContent = 
-        `目前登入：${state.currentUser.name}（${state.currentUser.role}）`;
+        `${state.currentUser.bed}號床・${state.currentUser.name}`;
 
-      // 嚴格控制只有室長才看得到「室長管理後台」按鈕
+      // 只有楊定豊（室長）才顯示管理後台按鈕
       const adminBtn = document.getElementById("adminPortalBtn");
-      if (state.currentUser.role === "室長") {
+      if (state.currentUser.role === "室長" || state.currentUser.name === "楊定豊") {
         adminBtn.classList.remove("hidden");
       } else {
         adminBtn.classList.add("hidden");
@@ -466,7 +454,7 @@
     }
 
     function logout() {
-      localStorage.removeItem("dorm_clean_user");
+      localStorage.removeItem("dorm522_user");
       state.currentUser = null;
       state.inAdminView = false;
       document.getElementById("appHeader").classList.add("hidden");
@@ -474,22 +462,22 @@
       document.getElementById("adminView").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
       document.getElementById("loginInput").value = "";
-      renderQuickUserButtons();
+      document.getElementById("loginPasswordInput").value = "0000";
     }
 
     async function refreshSystemData() {
-      showLoading("正在更新最新審核狀態...");
+      showLoading("正在同步最新資料...");
       const res = await callApi({ action: "init" });
       hideLoading();
       if (res && res.success) {
         syncStateData(res.data);
         renderAllViews();
-        showToast("已同步最新資料");
+        showToast("已更新為最新狀態");
       }
     }
 
     function toggleAdminView() {
-      if (!state.currentUser || state.currentUser.role !== "室長") return;
+      if (!state.currentUser || (state.currentUser.role !== "室長" && state.currentUser.name !== "楊定豊")) return;
       state.inAdminView = !state.inAdminView;
       renderAllViews();
     }
@@ -499,10 +487,10 @@
       const admin = document.getElementById("adminView");
       const adminBtn = document.getElementById("adminPortalBtn");
 
-      if (state.inAdminView && state.currentUser?.role === "室長") {
+      if (state.inAdminView && (state.currentUser?.role === "室長" || state.currentUser?.name === "楊定豊")) {
         dash.classList.add("hidden");
         admin.classList.remove("hidden");
-        adminBtn.textContent = "返回掃區首頁";
+        adminBtn.textContent = "返回個人掃區";
         renderAdminView();
       } else {
         admin.classList.add("hidden");
@@ -512,131 +500,138 @@
       }
     }
 
-    /* ==================== 室友掃區總覽渲染 ==================== */
+    /* ==================== 室友掃區視角渲染（認領前只看未選區；認領後只看自己區） ==================== */
 
     function renderDashboard() {
-      const completedCount = state.zones.filter(z => z.status === "已完成").length;
-      document.getElementById("globalProgressText").textContent = `${completedCount} / ${state.zones.length} 區完成`;
       const firstDeadline = state.zones[0]?.deadline || "未設定";
       document.getElementById("globalDeadlineText").textContent = `打掃截止期限：${firstDeadline}`;
 
+      const myZone = state.zones.find(z => z.assignee === state.currentUser?.name);
+      const mainTitle = document.getElementById("dashMainTitle");
+      const personalStatus = document.getElementById("personalStatusText");
       const container = document.getElementById("zoneCardsContainer");
-      container.innerHTML = state.zones.map(zone => {
-        const zCheckpoints = state.checkpoints.filter(c => c.zoneId === zone.zoneId);
-        const zSubs = state.submissions.filter(s => s.zoneId === zone.zoneId);
-        const isMine = zone.assignee === state.currentUser?.name;
-        const badgeStyle = getStatusStyle(zone.status);
 
-        // 檢查點小標籤列表
-        const cpPills = zCheckpoints.map(cp => {
-          const uploaded = zSubs.some(s => s.checkpointId === cp.checkpointId && s.photoUrl);
-          return `
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${uploaded ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
-              ${uploaded ? '✅' : '📷'} ${escapeHtml(cp.order + '. ' + cp.title)}
-            </span>
-          `;
-        }).join("");
+      // 情況 A：已經認領了掃區 -> 只顯示自己的那一個掃區，且不提前曝光檢核點
+      if (myZone) {
+        mainTitle.textContent = `你的專屬打掃區域：${myZone.name}`;
+        personalStatus.textContent = `${myZone.name}（${myZone.status}）`;
+        container.className = "grid grid-cols-1 gap-5";
+        container.innerHTML = renderMyClaimedZoneCard(myZone);
+        return;
+      }
 
-        // 室長評語區塊
-        const commentHtml = zone.comment ? `
-          <div class="mt-3 p-3 rounded-2xl text-xs font-bold ${zone.status.includes('退回') ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-blue-50 text-blue-800 border border-blue-200'}">
-            💬 室長審核評語：${escapeHtml(zone.comment)}
-          </div>
-        ` : "";
+      // 情況 B：尚未認領掃區 -> 只顯示「還沒被選走」的掃區
+      const availableZones = state.zones.filter(z => !z.assignee || z.status === "未認領");
+      mainTitle.textContent = "請選擇你要負責的掃區（下好離手）";
+      personalStatus.textContent = "尚未選擇掃區";
+      container.className = "grid grid-cols-1 md:grid-cols-2 gap-5";
 
-        // 底部操作按鈕邏輯
-        let actionBtns = "";
-        if (zone.status === "未認領" || !zone.assignee) {
-          actionBtns = `
-            <button onclick="handleClaimZone('${zone.zoneId}')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm transition">
-              認領此掃區
-            </button>
-          `;
-        } else if (isMine) {
-          if (zone.status === "打掃中" || zone.status === "線上退回" || zone.status === "實體退回") {
-            actionBtns = `
-              <div class="flex gap-2">
-                <button onclick="openCameraGuide('${zone.zoneId}')" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-sm transition">
-                  📸 開始拍照上傳成果 (${zSubs.length}/${zCheckpoints.length})
-                </button>
-                <button onclick="handleReleaseZone('${zone.zoneId}', false)" class="px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 font-bold text-xs transition">
-                  放棄認領
-                </button>
-              </div>
-            `;
-          } else if (zone.status === "待線上審核") {
-            actionBtns = `
-              <div class="flex gap-2 items-center">
-                <span class="flex-1 py-2.5 px-3 rounded-xl bg-amber-50 text-amber-800 font-bold text-xs text-center border border-amber-200">
-                  ⏳ 已送出照片，等待室長進行第一階段線上初審
-                </span>
-                <button onclick="openCameraGuide('${zone.zoneId}')" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs shrink-0">
-                  修改重傳
-                </button>
-              </div>
-            `;
-          } else if (zone.status === "待實體檢查") {
-            actionBtns = `
-              <div class="py-2.5 px-3 rounded-xl bg-purple-50 text-purple-800 font-bold text-xs text-center border border-purple-200">
-                🎉 線上照片初審已通過！請等待室長有空時進行實體檢查
-              </div>
-            `;
-          } else if (zone.status === "已完成") {
-            actionBtns = `
-              <div class="py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-800 font-black text-xs text-center border border-emerald-200">
-                🏆 線上與實體檢查皆通過！已完成本區打掃
-              </div>
-            `;
-          }
-        } else {
-          // 他人認領的掃區
-          actionBtns = `
-            <div class="py-2.5 px-3 rounded-xl bg-slate-100 text-slate-500 font-bold text-xs text-center">
-              由室友「${escapeHtml(zone.assignee)}」負責打掃中
-            </div>
-          `;
-        }
-
-        return `
-          <div class="bg-white rounded-3xl border ${isMine ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200'} p-5 sm:p-6 shadow-sm flex flex-col justify-between">
-            <div>
-              <div class="flex items-start justify-between gap-2 mb-3">
-                <div>
-                  <span class="text-xs font-black text-slate-400">${escapeHtml(zone.zoneId)}</span>
-                  <h3 class="text-lg font-black text-slate-800">${escapeHtml(zone.name)}</h3>
-                </div>
-                <span class="px-3 py-1 rounded-full text-xs font-black shrink-0 ${badgeStyle}">
-                  ${escapeHtml(zone.status)}
-                </span>
-              </div>
-
-              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">${escapeHtml(zone.description)}</p>
-
-              <div class="bg-slate-50 rounded-2xl p-3.5 mb-4 space-y-2 border border-slate-100">
-                <div class="flex items-center justify-between text-xs">
-                  <span class="text-slate-500 font-medium">負責成員：</span>
-                  <span class="font-black ${zone.assignee ? 'text-slate-800' : 'text-slate-400'}">
-                    ${zone.assignee ? escapeHtml(zone.assignee) + (isMine ? ' (你)' : '') : '尚未有人認領'}
-                  </span>
-                </div>
-                <div class="flex items-center justify-between text-xs">
-                  <span class="text-slate-500 font-medium">需拍攝檢核角度：</span>
-                  <span class="font-bold text-slate-700">共 ${zCheckpoints.length} 張示範對照圖</span>
-                </div>
-                <div class="pt-1 flex flex-wrap gap-1.5">
-                  ${cpPills}
-                </div>
-              </div>
-
-              ${commentHtml}
-            </div>
-
-            <div class="mt-4 pt-3 border-t border-slate-100">
-              ${actionBtns}
-            </div>
+      if (availableZones.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full bg-white rounded-3xl border border-slate-200 p-8 text-center text-slate-500 font-bold">
+            目前所有掃區皆已被認領完畢。
           </div>
         `;
-      }).join("");
+        return;
+      }
+
+      container.innerHTML = availableZones.map(zone => `
+        <div class="bg-white rounded-3xl border border-slate-200 hover:border-blue-400 p-6 shadow-sm flex flex-col justify-between transition">
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <div>
+                <span class="text-xs font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">${escapeHtml(zone.zoneId)}</span>
+                <h3 class="text-xl font-black text-slate-800 mt-2">${escapeHtml(zone.name)}</h3>
+              </div>
+              <span class="px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-600">
+                可認領
+              </span>
+            </div>
+
+            <p class="text-sm text-slate-600 leading-relaxed mt-2 mb-5">${escapeHtml(zone.description)}</p>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100">
+            <button onclick="handleClaimZone('${zone.zoneId}', '${escapeHtml(zone.name)}')" 
+              class="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-black text-sm shadow-sm transition">
+              選擇此掃區（下好離手）
+            </button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderMyClaimedZoneCard(zone) {
+      const badgeStyle = getStatusStyle(zone.status);
+      const zSubs = state.submissions.filter(s => s.zoneId === zone.zoneId);
+
+      // 楊定豊評語區塊
+      const commentHtml = zone.comment ? `
+        <div class="mt-4 p-4 rounded-2xl text-xs sm:text-sm font-bold ${zone.status.includes('退回') ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-blue-50 text-blue-800 border border-blue-200'}">
+          💬 楊定豊審核評語：${escapeHtml(zone.comment)}
+        </div>
+      ` : "";
+
+      let actionHtml = "";
+      if (zone.status === "打掃中" || zone.status === "線上退回" || zone.status === "實體退回") {
+        actionHtml = `
+          <button onclick="startPhotoVerify('${zone.zoneId}')" class="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-black text-base shadow-md transition">
+            📸 我已將此區全部打掃完畢・開始拍照上傳成果
+          </button>
+        `;
+      } else if (zone.status === "待線上審核") {
+        actionHtml = `
+          <div class="flex flex-col sm:flex-row gap-3 items-center">
+            <div class="w-full flex-1 py-3.5 px-4 rounded-2xl bg-amber-50 text-amber-800 font-bold text-xs sm:text-sm text-center border border-amber-200">
+              ⏳ 已送出成果照片，等待楊定豊進行第一階段線上初審
+            </div>
+            <button onclick="openCameraGuide('${zone.zoneId}')" class="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm shrink-0">
+              重新補拍上傳
+            </button>
+          </div>
+        `;
+      } else if (zone.status === "待實體檢查") {
+        actionHtml = `
+          <div class="py-4 px-4 rounded-2xl bg-purple-50 text-purple-800 font-black text-sm text-center border border-purple-200">
+            🎉 線上照片初審已通過！請等待楊定豊有空時進行實體檢查
+          </div>
+        `;
+      } else if (zone.status === "已完成") {
+        actionHtml = `
+          <div class="py-4 px-4 rounded-2xl bg-emerald-50 text-emerald-800 font-black text-sm text-center border border-emerald-200">
+            🏆 楊定豊線上與實體檢查皆通過！你已完美完成本區打掃
+          </div>
+        `;
+      }
+
+      return `
+        <div class="bg-white rounded-3xl border-2 border-blue-500 ring-4 ring-blue-50 p-6 sm:p-8 shadow-md">
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <span class="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">${escapeHtml(zone.zoneId)}・個人負責掃區</span>
+              <h3 class="text-2xl font-black text-slate-900 mt-2">${escapeHtml(zone.name)}</h3>
+            </div>
+            <span class="px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black shrink-0 ${badgeStyle}">
+              ${escapeHtml(zone.status)}
+            </span>
+          </div>
+
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 mb-4">
+            <p class="text-xs font-bold text-slate-400 mb-1">打掃範圍與清潔標準：</p>
+            <p class="text-sm sm:text-base font-bold text-slate-800 leading-relaxed">${escapeHtml(zone.description)}</p>
+          </div>
+
+          <div class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-3.5 text-xs text-amber-900 font-medium leading-relaxed">
+            ⚠️ <strong>注意：</strong>為確保每個角落皆徹底打掃，系統不會事先公布拍照檢核位置。請將上述範圍內的所有區域徹底清潔乾淨後，再點擊下方按鈕開啟相機依示範照角度拍攝。
+          </div>
+
+          ${commentHtml}
+
+          <div class="mt-6 pt-5 border-t border-slate-100">
+            ${actionHtml}
+          </div>
+        </div>
+      `;
     }
 
     function getStatusStyle(status) {
@@ -652,8 +647,10 @@
       }
     }
 
-    async function handleClaimZone(zoneId) {
-      showLoading("正在為你登記認領掃區...");
+    async function handleClaimZone(zoneId, zoneName) {
+      if (!confirm(`確定要選擇「${zoneName}」嗎？\n注意：下好離手，選擇後即鎖定為你的專屬掃區，無法更換或放棄！`)) return;
+
+      showLoading("正在為你鎖定認領掃區...");
       const res = await callApi({
         action: "claimZone",
         zoneId: zoneId,
@@ -670,14 +667,39 @@
       showToast(res.message);
     }
 
-    async function handleReleaseZone(zoneId, isAdmin) {
-      if (!confirm("確定要釋出這個掃區嗎？已上傳的暫存照片將會被清除。")) return;
-      showLoading("正在釋出掃區...");
+    function startPhotoVerify(zoneId) {
+      openCameraGuide(zoneId);
+    }
+
+    /* ==================== 修改密碼功能 ==================== */
+
+    function openPasswordModal() {
+      document.getElementById("oldPwdInput").value = "";
+      document.getElementById("newPwdInput").value = "";
+      document.getElementById("passwordModal").classList.remove("hidden");
+      document.getElementById("passwordModal").classList.add("flex");
+    }
+
+    function closePasswordModal() {
+      document.getElementById("passwordModal").classList.add("hidden");
+      document.getElementById("passwordModal").classList.remove("flex");
+    }
+
+    async function submitChangePassword() {
+      const oldPassword = document.getElementById("oldPwdInput").value.trim();
+      const newPassword = document.getElementById("newPwdInput").value.trim();
+
+      if (!/^\d{4}$/.test(oldPassword) || !/^\d{4}$/.test(newPassword)) {
+        showToast("原密碼與新密碼皆必須為 4 位數字！", true);
+        return;
+      }
+
+      showLoading("正在更新你的密碼...");
       const res = await callApi({
-        action: "releaseZone",
-        zoneId: zoneId,
+        action: "changePassword",
         userName: state.currentUser.name,
-        isAdmin: isAdmin
+        oldPassword,
+        newPassword
       });
       hideLoading();
 
@@ -685,8 +707,7 @@
         showToast(res.message, true);
         return;
       }
-      syncStateData(res.data);
-      renderAllViews();
+      closePasswordModal();
       showToast(res.message);
     }
 
@@ -705,7 +726,6 @@
       state.currentStepIndex = 0;
       state.draftPhotos = {};
 
-      // 載入已上傳過的舊照片紀錄作為預設預覽
       cps.forEach(cp => {
         const sub = state.submissions.find(s => s.zoneId === zoneId && s.checkpointId === cp.checkpointId);
         if (sub && sub.photoUrl) {
@@ -717,7 +737,7 @@
         }
       });
 
-      document.getElementById("guideZoneBadge").textContent = zone.zoneId + " 成果回報";
+      document.getElementById("guideZoneBadge").textContent = zone.zoneId + " 成果拍攝";
       document.getElementById("guideZoneTitle").textContent = zone.name;
       document.getElementById("cameraGuideModal").classList.remove("hidden");
       document.getElementById("cameraGuideModal").classList.add("flex");
@@ -742,14 +762,14 @@
         return `
           <button onclick="jumpToGuideStep(${i})" 
             class="px-3 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition ${isCurrent ? 'step-active font-black' : (hasPhoto ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-500')}">
-            ${hasPhoto ? '✅' : '📷'} 角度 ${i + 1}：${escapeHtml(cp.title)}
+            ${hasPhoto ? '✅' : '📷'} 第 ${i + 1} 張：${escapeHtml(cp.title)}
           </button>
         `;
       }).join("");
       document.getElementById("guideStepIndicators").innerHTML = indicatorHtml;
 
       // 當前角度資訊
-      document.getElementById("currentCpOrderBadge").textContent = `第 ${idx + 1} / ${cps.length} 張指定角度`;
+      document.getElementById("currentCpOrderBadge").textContent = `第 ${idx + 1} / ${cps.length} 張指定拍攝位置`;
       document.getElementById("currentCpTitle").textContent = currentCp.title;
       document.getElementById("currentCpDesc").textContent = currentCp.description;
       document.getElementById("currentCpDemoImg").src = currentCp.demoUrl;
@@ -780,10 +800,8 @@
         compressHint.classList.add("hidden");
       }
 
-      // 清空 file input 以便重複選取同檔案
       document.getElementById("cameraFileInput").value = "";
 
-      // 控制底部按鈕顯示
       document.getElementById("prevStepBtn").disabled = (idx === 0);
       document.getElementById("prevStepBtn").classList.toggle("opacity-40", idx === 0);
 
@@ -834,7 +852,6 @@
         renderCurrentGuideStep();
         showToast(`已完成「${currentCp.title}」角度拍攝！`);
 
-        // 若還沒到最後一張，0.5 秒後自動跳往下一張角度
         if (state.currentStepIndex < state.activeCheckpoints.length - 1) {
           setTimeout(() => {
             changeGuideStep(1);
@@ -860,7 +877,7 @@
         existingUrl: state.draftPhotos[cp.checkpointId].existingUrl
       }));
 
-      showLoading("正在將照片上傳至雲端並送交室長初審...");
+      showLoading("正在將照片上傳至雲端並送交楊定豊初審...");
       const res = await callApi({
         action: "submitPhotos",
         zoneId: state.activeZoneId,
@@ -880,17 +897,15 @@
       showToast(res.message);
     }
 
-    /* ==================== 室長管理後台渲染與操作 ==================== */
+    /* ==================== 楊定豊管理後台渲染與操作 ==================== */
 
     function renderAdminView() {
-      // 1. 渲染各掃區審核卡片
       const reviewContainer = document.getElementById("adminReviewContainer");
       reviewContainer.innerHTML = state.zones.map(zone => {
         const zCheckpoints = state.checkpoints.filter(c => c.zoneId === zone.zoneId);
         const zSubs = state.submissions.filter(s => s.zoneId === zone.zoneId);
         const badgeStyle = getStatusStyle(zone.status);
 
-        // 每個檢查點的「示範圖 vs 室友實拍圖」並排對照
         const compareGrid = zCheckpoints.map(cp => {
           const sub = zSubs.find(s => s.checkpointId === cp.checkpointId);
           return `
@@ -925,31 +940,29 @@
           <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div>
-                <span class="text-xs font-black text-slate-400">${escapeHtml(zone.zoneId)}</span>
+                <span class="text-xs font-black text-blue-600">${escapeHtml(zone.zoneId)}</span>
                 <h4 class="text-lg font-black text-slate-900">${escapeHtml(zone.name)}</h4>
-                <p class="text-xs text-slate-500">認領室友：<strong class="text-slate-800">${escapeHtml(zone.assignee || '尚未認領')}</strong></p>
+                <p class="text-xs text-slate-500">負責室友：<strong class="text-slate-800">${escapeHtml(zone.assignee || '尚未有人認領')}</strong></p>
               </div>
               <div class="flex items-center gap-2">
                 <span class="px-3 py-1 rounded-full text-xs font-black ${badgeStyle}">${escapeHtml(zone.status)}</span>
                 ${zone.assignee ? `
-                  <button onclick="handleReleaseZone('${zone.zoneId}', true)" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold">
-                    強制退選
+                  <button onclick="adminForceReleaseZone('${zone.zoneId}')" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold">
+                    強制重設此區
                   </button>
                 ` : ''}
               </div>
             </div>
 
-            <!-- 並排照片檢視區 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               ${compareGrid}
             </div>
 
-            <!-- 審核評語與兩階段按鈕 -->
             <div class="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-200/70">
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">室長審核評語 / 退回重掃原因說明</label>
+                <label class="block text-xs font-bold text-slate-700 mb-1">楊定豊審核評語 / 退回重掃原因說明</label>
                 <input id="reviewComment_${zone.zoneId}" type="text" value="${escapeHtml(zone.comment)}" 
-                  placeholder="例如：排水孔邊緣還有毛髮，請刷乾淨後重拍第2張" 
+                  placeholder="例如：角落還有毛髮沒清乾淨，請重刷後補拍第2張" 
                   class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white outline-none focus:border-blue-600">
               </div>
 
@@ -972,7 +985,6 @@
         `;
       }).join("");
 
-      // 2. 渲染檢查點示範照管理
       const cpContainer = document.getElementById("adminCheckpointsContainer");
       cpContainer.innerHTML = state.checkpoints.map(cp => {
         const zone = state.zones.find(z => z.zoneId === cp.zoneId);
@@ -999,21 +1011,42 @@
         `;
       }).join("");
 
-      // 3. 填入目前截止時間與成員名單
       document.getElementById("adminDeadlineInput").value = state.zones[0]?.deadline || "";
       const memberList = document.getElementById("adminMemberList");
       memberList.innerHTML = state.users.map(u => `
-        <div class="py-2.5 flex items-center justify-between text-xs">
+        <div class="py-3 flex items-center justify-between text-xs sm:text-sm">
           <div>
+            <span class="inline-block w-14 font-black text-blue-600">${escapeHtml(u.bed)}號床</span>
             <span class="font-black text-slate-800">${escapeHtml(u.name)}</span>
-            <span class="ml-1.5 px-2 py-0.5 rounded-md ${u.role === '室長' ? 'bg-amber-100 text-amber-800 font-black' : 'bg-slate-100 text-slate-600'}">${escapeHtml(u.role)}</span>
-            <span class="text-slate-400 ml-2">${escapeHtml(u.email)}</span>
+            <span class="ml-2 px-2 py-0.5 rounded-md text-xs ${u.role === '室長' ? 'bg-amber-100 text-amber-800 font-black' : 'bg-slate-100 text-slate-600'}">${escapeHtml(u.role)}</span>
           </div>
-          ${u.name !== state.currentUser.name ? `
-            <button onclick="deleteMember('${escapeHtml(u.name)}')" class="text-rose-500 hover:underline font-bold">移除</button>
-          ` : '<span class="text-slate-300 font-bold">本人</span>'}
+          <button onclick="adminResetPassword('${escapeHtml(u.name)}')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+            重設密碼為 0000
+          </button>
         </div>
       `).join("");
+    }
+
+    async function adminForceReleaseZone(zoneId) {
+      if (!confirm("確定要強制清除此掃區的認領人與已上傳照片嗎？")) return;
+      showLoading("正在強制重置該掃區...");
+      const res = await callApi({ action: "releaseZone", zoneId, isAdmin: true });
+      hideLoading();
+      if (res.success) {
+        syncStateData(res.data);
+        renderAllViews();
+        showToast(res.message);
+      } else {
+        showToast(res.message, true);
+      }
+    }
+
+    async function adminResetPassword(targetName) {
+      if (!confirm(`確定要將「${targetName}」的密碼重設回 0000 嗎？`)) return;
+      showLoading("正在重設密碼...");
+      const res = await callApi({ action: "resetUserPassword", targetName });
+      hideLoading();
+      showToast(res.message, !res.success);
     }
 
     async function adminReviewOnline(zoneId, approved) {
@@ -1095,7 +1128,7 @@
     async function saveGlobalDeadline() {
       const deadline = document.getElementById("adminDeadlineInput").value.trim();
       if (!deadline) return showToast("請輸入截止時間", true);
-      showLoading("正在更新全寢室截止期限...");
+      showLoading("正在更新截止期限...");
       const res = await callApi({ action: "updateDeadline", deadline });
       hideLoading();
       if (res.success) {
@@ -1105,39 +1138,9 @@
       }
     }
 
-    async function addOrUpdateMember() {
-      const name = document.getElementById("newMemberName").value.trim();
-      const email = document.getElementById("newMemberEmail").value.trim();
-      const role = document.getElementById("newMemberRole").value;
-      if (!name) return showToast("請輸入成員姓名", true);
-
-      showLoading("正在更新寢室成員名單...");
-      const res = await callApi({ action: "manageUser", subAction: "add", name, email, role });
-      hideLoading();
-      if (res.success) {
-        document.getElementById("newMemberName").value = "";
-        document.getElementById("newMemberEmail").value = "";
-        syncStateData(res.data);
-        renderAllViews();
-        showToast(res.message);
-      }
-    }
-
-    async function deleteMember(name) {
-      if (!confirm(`確定要移除成員「${name}」嗎？`)) return;
-      showLoading("正在移除成員...");
-      const res = await callApi({ action: "manageUser", subAction: "delete", name });
-      hideLoading();
-      if (res.success) {
-        syncStateData(res.data);
-        renderAllViews();
-        showToast(res.message);
-      }
-    }
-
     async function confirmResetAllZones() {
-      if (!confirm("確定要重置所有掃區的認領狀態與上傳照片嗎？此操作適合開啟新一輪打掃時使用。")) return;
-      showLoading("正在重置全寢室掃區資料...");
+      if (!confirm("確定要重置 522 房所有掃區的認領狀態與上傳照片嗎？")) return;
+      showLoading("正在重置所有掃區資料...");
       const res = await callApi({ action: "resetAllZones" });
       hideLoading();
       if (res.success) {
@@ -1177,43 +1180,16 @@
     }
 
     async function callApi(payload) {
-      if (!state.gasUrl) {
-        openGasUrlModal();
-        return { success: false, message: "尚未設定後端網址" };
-      }
       try {
-        const response = await fetch(state.gasUrl, {
+        const response = await fetch(GAS_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
         return await response.json();
       } catch (err) {
-        return { success: false, message: "網路連線異常，請確認 GAS 部署網址與權限設定為「所有人」" };
+        return { success: false, message: "網路連線異常，請確認 GAS 已建立新版本部署" };
       }
-    }
-
-    function openGasUrlModal() {
-      document.getElementById("gasUrlInput").value = state.gasUrl || "";
-      document.getElementById("gasUrlModal").classList.remove("hidden");
-      document.getElementById("gasUrlModal").classList.add("flex");
-    }
-
-    function closeGasUrlModal() {
-      document.getElementById("gasUrlModal").classList.add("hidden");
-      document.getElementById("gasUrlModal").classList.remove("flex");
-    }
-
-    function saveGasUrl() {
-      const val = document.getElementById("gasUrlInput").value.trim();
-      if (!val.startsWith("https://script.google.com/")) {
-        showToast("請輸入正確的 Google Apps Script 網址", true);
-        return;
-      }
-      state.gasUrl = val;
-      localStorage.setItem("dorm_clean_gas_url", val);
-      closeGasUrlModal();
-      initApp();
     }
 
     function openLightbox(src) {
