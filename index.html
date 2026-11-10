@@ -248,30 +248,78 @@
       </div>
     </div>
 
-    <!-- ==================== 5. 楊定豊管理後台畫面 ==================== -->
+    <!-- ==================== 5. 新增拍攝角度彈跳視窗 (楊定豊專用) ==================== -->
+    <div id="addCpModal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+      <div class="bg-white max-w-md w-full rounded-3xl p-6 shadow-2xl space-y-4 fade-in max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between">
+          <div>
+            <span id="addCpZoneBadge" class="text-xs font-black text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">新增檢核點</span>
+            <h3 class="text-lg font-black text-slate-800 mt-1">新增拍攝檢核角度</h3>
+          </div>
+          <button onclick="closeAddCpModal()" class="px-3 py-1 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">關閉</button>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">拍攝部位名稱（必填）</label>
+            <input id="newCpTitleInput" type="text" placeholder="例如：馬桶後方死角、洗手台下方地板" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold outline-none focus:border-blue-600">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">拍攝角度與清潔標準說明</label>
+            <textarea id="newCpDescInput" rows="2" placeholder="例如：由上往下近距離拍攝，確認無任何毛髮與污漬" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm outline-none focus:border-blue-600"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">上傳標準示範照片</label>
+            <div class="border-2 border-dashed border-slate-300 rounded-2xl p-3 bg-slate-50 text-center space-y-2">
+              <img id="newCpPreviewImg" src="" alt="預覽示範圖" class="w-full aspect-[4/3] object-cover rounded-xl hidden">
+              <div id="newCpEmptyHint" class="py-6 text-slate-400">
+                <p class="text-2xl mb-1">📷</p>
+                <p class="text-xs font-bold">點擊下方按鈕拍照或從相簿選擇示範圖</p>
+              </div>
+              <label class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs text-center cursor-pointer block transition">
+                開啟相機拍照 / 選擇示範照片
+                <input id="newCpFileInput" type="file" accept="image/*" class="hidden" onchange="handleNewCpPhotoSelected(event)">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+          <button onclick="closeAddCpModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">取消</button>
+          <button onclick="submitNewCheckpoint()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-sm">確認新增此角度</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 6. 楊定豊管理後台畫面 ==================== -->
     <section id="adminView" class="hidden space-y-8 fade-in">
       
       <div class="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-xs font-black mb-1">3號床・楊定豊專屬後台</span>
           <h2 class="text-xl font-black text-slate-900">522打掃系統・全區審核與管理中心</h2>
-          <p class="text-xs sm:text-sm text-slate-600">可在此檢視四區認領進度、進行第一階段線上照片初審、第二階段現場實體驗收，以及更換示範照。</p>
+          <p class="text-xs sm:text-sm text-slate-600">可在此檢視四區認領進度、進行第一階段線上照片初審、第二階段現場實體驗收，以及自由新增或刪除各區要拍的檢核角度。</p>
         </div>
       </div>
 
+      <!-- 區塊 A：四大掃區審核 -->
       <div class="space-y-4">
         <h3 class="text-lg font-black text-slate-800">🔍 四大掃區線上初審與實體驗收</h3>
         <div id="adminReviewContainer" class="space-y-5"></div>
       </div>
 
-      <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
+      <!-- 區塊 B：各掃區自訂新增 / 刪除 / 修改拍攝檢查點 -->
+      <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-5">
         <div>
-          <h3 class="text-lg font-black text-slate-800">🖼️ 各掃區檢核點・示範照片設定</h3>
-          <p class="text-xs text-slate-500 mt-0.5">你可隨時拍照替換各區域的標準示範圖與文字說明。</p>
+          <h3 class="text-lg font-black text-slate-800">🖼️ 各掃區拍攝角度設定（可自由新增、刪除與更換示範照）</h3>
+          <p class="text-xs text-slate-500 mt-0.5">想讓室友多拍幾個地方，直接點擊該掃區右上角的「➕ 新增此區拍攝角度」即可無限追加！</p>
         </div>
-        <div id="adminCheckpointsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div id="adminCheckpointsContainer" class="space-y-6"></div>
       </div>
 
+      <!-- 區塊 C：期限與名單管理 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-5">
           <div class="space-y-4">
@@ -315,7 +363,6 @@
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbz7lHJcXe3iAaycDpz3zwFFYWdaIaEuSjjkXAENkiEqmxRQmfWtaGj8-NNbI7DGf-kU/exec";
 
-    // 徹底清除上一版造成的錯誤快取，確保 100% 絕對以雲端試算表為準
     localStorage.removeItem("dorm522_sys_cache_v2");
 
     const BED_MAP = {
@@ -335,7 +382,10 @@
       activeZoneId: null,
       activeCheckpoints: [],
       currentStepIndex: 0,
-      draftPhotos: {}
+      draftPhotos: {},
+      // 新增檢查點暫存
+      addingZoneId: null,
+      newCpBase64: null
     };
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -343,12 +393,8 @@
     });
 
     async function initApp() {
-      // 未登入時直接顯示登入框，不發送多餘的初始請求，省去第一次等待
-      if (!state.currentUser) {
-        return;
-      }
+      if (!state.currentUser) return;
 
-      // 已登入者打開網頁時，直接向雲端拉取一次最新真實狀態
       showLoading("正在同步最新資料...");
       const res = await callApi({ action: "init" });
       hideLoading();
@@ -398,7 +444,6 @@
         return;
       }
 
-      // 單次請求同時完成密碼驗證並取回最新試算表資料
       showLoading("驗證身分並同步最新資料...");
       const res = await callApi({
         action: "login",
@@ -500,7 +545,6 @@
       const personalStatus = document.getElementById("personalStatusText");
       const container = document.getElementById("zoneCardsContainer");
 
-      // 已認領掃區：只顯示自己的專屬掃區
       if (myZone) {
         mainTitle.textContent = `你的專屬打掃區域：${myZone.name}`;
         personalStatus.textContent = `${myZone.name}（${myZone.status}）`;
@@ -509,7 +553,6 @@
         return;
       }
 
-      // 尚未認領掃區：只顯示還未被選走的區域
       const availableZones = state.zones.filter(z => !z.assignee || z.status === "未認領");
       mainTitle.textContent = "請選擇你要負責的掃區";
       personalStatus.textContent = "尚未選擇掃區";
@@ -701,7 +744,7 @@
       const zone = state.zones.find(z => z.zoneId === zoneId);
       const cps = state.checkpoints.filter(c => c.zoneId === zoneId).sort((a, b) => a.order - b.order);
       if (!zone || !cps.length) {
-        showToast("此掃區尚未設定拍攝檢查點", true);
+        showToast("此掃區尚未設定拍攝檢查點，請通知楊定豊於後台新增", true);
         return;
       }
 
@@ -882,6 +925,7 @@
     /* ==================== 楊定豊管理後台渲染與操作 ==================== */
 
     function renderAdminView() {
+      // 1. 各區兩階段審核
       const reviewContainer = document.getElementById("adminReviewContainer");
       reviewContainer.innerHTML = state.zones.map(zone => {
         const zCheckpoints = state.checkpoints.filter(c => c.zoneId === zone.zoneId);
@@ -967,27 +1011,62 @@
         `;
       }).join("");
 
+      // 2. 依掃區分組渲染「新增 / 刪除 / 修改」檢查點區塊
       const cpContainer = document.getElementById("adminCheckpointsContainer");
-      cpContainer.innerHTML = state.checkpoints.map(cp => {
-        const zone = state.zones.find(z => z.zoneId === cp.zoneId);
-        return `
-          <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-between space-y-3">
+      cpContainer.innerHTML = state.zones.map(zone => {
+        const zCps = state.checkpoints.filter(c => c.zoneId === zone.zoneId).sort((a, b) => a.order - b.order);
+
+        const cpCards = zCps.length ? zCps.map(cp => `
+          <div class="border border-slate-200 rounded-2xl p-4 bg-white flex flex-col justify-between space-y-3 shadow-sm">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span class="text-xs font-black text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-lg">
+                第 ${cp.order} 張指定角度
+              </span>
+              <button onclick="adminDeleteCheckpoint('${cp.checkpointId}', '${escapeHtml(cp.title)}')" 
+                class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition">
+                🗑️ 刪除此角度
+              </button>
+            </div>
+
             <div class="flex gap-3">
               <img src="${escapeHtml(cp.demoUrl)}" onclick="openLightbox(this.src)" class="w-24 h-20 rounded-xl object-cover bg-slate-200 shrink-0 cursor-pointer">
               <div class="flex-1 min-w-0 space-y-1.5">
-                <span class="text-[11px] font-black text-blue-600">${escapeHtml(zone?.name || cp.zoneId)}・角度 ${cp.order}</span>
-                <input id="cpTitle_${cp.checkpointId}" type="text" value="${escapeHtml(cp.title)}" class="w-full px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-bold bg-white">
-                <input id="cpDesc_${cp.checkpointId}" type="text" value="${escapeHtml(cp.description)}" class="w-full px-2.5 py-1 rounded-lg border border-slate-300 text-xs bg-white">
+                <input id="cpTitle_${cp.checkpointId}" type="text" value="${escapeHtml(cp.title)}" placeholder="拍攝部位名稱" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs font-bold bg-white">
+                <input id="cpDesc_${cp.checkpointId}" type="text" value="${escapeHtml(cp.description)}" placeholder="拍攝角度與標準說明" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white">
               </div>
             </div>
+
             <div class="flex items-center gap-2 pt-1">
               <label class="flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs text-center cursor-pointer transition">
                 📷 拍照更換示範圖
                 <input type="file" accept="image/*" class="hidden" onchange="uploadNewDemoPhoto(event, '${cp.checkpointId}')">
               </label>
               <button onclick="saveCheckpointText('${cp.checkpointId}')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold">
-                儲存文字
+                儲存修改
               </button>
+            </div>
+          </div>
+        `).join("") : `
+          <div class="col-span-full py-6 text-center text-xs text-slate-400 font-bold bg-white rounded-2xl border border-dashed border-slate-300">
+            此掃區目前沒有設定任何拍攝角度，請點擊右上角「➕ 新增此區拍攝角度」
+          </div>
+        `;
+
+        return `
+          <div class="border border-slate-200 rounded-3xl p-4 sm:p-5 bg-slate-50/70 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="text-xs font-black text-slate-400">${escapeHtml(zone.zoneId)}</span>
+                <h4 class="text-base font-black text-slate-800">${escapeHtml(zone.name)}（共 ${zCps.length} 張需拍攝）</h4>
+              </div>
+              <button onclick="openAddCpModal('${zone.zoneId}', '${escapeHtml(zone.name)}')" 
+                class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white text-xs font-black shadow-sm transition">
+                ➕ 新增此區拍攝角度
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${cpCards}
             </div>
           </div>
         `;
@@ -1007,6 +1086,99 @@
           </button>
         </div>
       `).join("");
+    }
+
+    /* ==================== 新增與刪除拍攝檢查點操作 ==================== */
+
+    function openAddCpModal(zoneId, zoneName) {
+      state.addingZoneId = zoneId;
+      state.newCpBase64 = null;
+      document.getElementById("addCpZoneBadge").textContent = `${zoneId}・${zoneName}`;
+      document.getElementById("newCpTitleInput").value = "";
+      document.getElementById("newCpDescInput").value = "";
+      document.getElementById("newCpFileInput").value = "";
+      document.getElementById("newCpPreviewImg").src = "";
+      document.getElementById("newCpPreviewImg").classList.add("hidden");
+      document.getElementById("newCpEmptyHint").classList.remove("hidden");
+
+      document.getElementById("addCpModal").classList.remove("hidden");
+      document.getElementById("addCpModal").classList.add("flex");
+    }
+
+    function closeAddCpModal() {
+      document.getElementById("addCpModal").classList.add("hidden");
+      document.getElementById("addCpModal").classList.remove("flex");
+    }
+
+    async function handleNewCpPhotoSelected(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      showLoading("正在處理示範照片...");
+      try {
+        const base64 = await compressImageFile(file, 1200, 0.82);
+        state.newCpBase64 = base64;
+        const preview = document.getElementById("newCpPreviewImg");
+        preview.src = base64;
+        preview.classList.remove("hidden");
+        document.getElementById("newCpEmptyHint").classList.add("hidden");
+        hideLoading();
+      } catch (e) {
+        hideLoading();
+        showToast("照片讀取失敗", true);
+      }
+    }
+
+    async function submitNewCheckpoint() {
+      const title = document.getElementById("newCpTitleInput").value.trim();
+      const desc = document.getElementById("newCpDescInput").value.trim();
+
+      if (!title) {
+        showToast("請輸入拍攝部位名稱！", true);
+        return;
+      }
+      if (!state.newCpBase64) {
+        showToast("請先拍照或選擇一張標準示範照片！", true);
+        return;
+      }
+
+      showLoading("正在新增拍攝檢核角度並上傳示範照...");
+      const res = await callApi({
+        action: "addCheckpoint",
+        zoneId: state.addingZoneId,
+        title: title,
+        desc: desc || "請對照示範照片角度拍攝清晰成果照",
+        base64Data: state.newCpBase64
+      });
+      hideLoading();
+
+      if (!res.success) {
+        showToast(res.message, true);
+        return;
+      }
+
+      syncStateData(res.data);
+      closeAddCpModal();
+      renderAllViews();
+      showToast(res.message);
+    }
+
+    async function adminDeleteCheckpoint(checkpointId, title) {
+      if (!confirm(`確定要刪除「${title}」這個拍攝角度嗎？刪除後其餘角度會自動重新排序。`)) return;
+      showLoading("正在刪除拍攝角度...");
+      const res = await callApi({
+        action: "deleteCheckpoint",
+        checkpointId: checkpointId
+      });
+      hideLoading();
+
+      if (!res.success) {
+        showToast(res.message, true);
+        return;
+      }
+
+      syncStateData(res.data);
+      renderAllViews();
+      showToast(res.message);
     }
 
     async function adminForceReleaseZone(zoneId) {
